@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'music_recommendation_screen.dart';
 
 class EmotionPuzzleScreen extends StatefulWidget {
   final String detectedEmotion;
+  final Uint8List? happyFaceImage;
 
-  const EmotionPuzzleScreen({super.key, required this.detectedEmotion});
+  const EmotionPuzzleScreen({
+    super.key,
+    required this.detectedEmotion,
+    this.happyFaceImage,
+  });
 
   @override
   State<EmotionPuzzleScreen> createState() => _EmotionPuzzleScreenState();
@@ -18,66 +25,32 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
   int _moves = 0;
   bool _isSolved = false;
   late AnimationController _celebrationController;
-
-  // Emotion icons for the puzzle
-  final List<IconData> _sadIcons = [
-    Icons.sentiment_very_dissatisfied,
-    Icons.cloud,
-    Icons.water_drop,
-    Icons.nightlight_round,
-    Icons.sentiment_dissatisfied,
-    Icons.thunderstorm,
-    Icons.dark_mode,
-    Icons.heart_broken,
-    Icons.sentiment_neutral,
-  ];
-
-  final List<IconData> _happyIcons = [
-    Icons.sentiment_very_satisfied,
-    Icons.wb_sunny,
-    Icons.favorite,
-    Icons.star,
-    Icons.emoji_emotions,
-    Icons.celebration,
-    Icons.light_mode,
-    Icons.favorite_border,
-    Icons.mood,
-  ];
-
-  final List<Color> _sadColors = [
-    Colors.blue.shade300,
-    Colors.grey.shade400,
-    Colors.indigo.shade300,
-    Colors.blueGrey.shade400,
-    Colors.blue.shade400,
-    Colors.grey.shade500,
-    Colors.indigo.shade400,
-    Colors.blueGrey.shade300,
-    Colors.blue.shade200,
-  ];
-
-  final List<Color> _happyColors = [
-    Colors.yellow.shade400,
-    Colors.orange.shade300,
-    Colors.pink.shade300,
-    Colors.amber.shade400,
-    Colors.green.shade400,
-    Colors.purple.shade300,
-    Colors.red.shade300,
-    Colors.teal.shade300,
-    Colors.lime.shade400,
-  ];
+  ui.Image? _decodedImage;
+  bool _imageLoaded = false;
+  final int _gridSize = 3; // 3x3 puzzle
 
   @override
   void initState() {
     super.initState();
-    _correctOrder = List.generate(9, (index) => index);
-    _puzzlePieces = List.generate(9, (index) => index);
+    _correctOrder = List.generate(_gridSize * _gridSize, (index) => index);
+    _puzzlePieces = List.generate(_gridSize * _gridSize, (index) => index);
     _shufflePuzzle();
     _celebrationController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     );
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    if (widget.happyFaceImage != null) {
+      final codec = await ui.instantiateImageCodec(widget.happyFaceImage!);
+      final frame = await codec.getNextFrame();
+      setState(() {
+        _decodedImage = frame.image;
+        _imageLoaded = true;
+      });
+    }
   }
 
   @override
@@ -88,26 +61,29 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
 
   void _shufflePuzzle() {
     final random = Random();
-    for (int i = _puzzlePieces.length - 1; i > 0; i--) {
-      int j = random.nextInt(i + 1);
-      int temp = _puzzlePieces[i];
-      _puzzlePieces[i] = _puzzlePieces[j];
-      _puzzlePieces[j] = temp;
+    // Do many random swaps to ensure good shuffle
+    for (int i = 0; i < 100; i++) {
+      int idx1 = random.nextInt(_puzzlePieces.length);
+      int idx2 = random.nextInt(_puzzlePieces.length);
+      int temp = _puzzlePieces[idx1];
+      _puzzlePieces[idx1] = _puzzlePieces[idx2];
+      _puzzlePieces[idx2] = temp;
     }
   }
 
-  void _onPieceTap(int index) {
+  void _onPieceTap(int tappedIndex) {
     if (_isSolved) return;
 
-    // Find empty adjacent position to swap
-    int emptyIndex = _puzzlePieces.indexOf(8);
-    List<int> adjacentIndices = _getAdjacentIndices(index);
+    // Find if there's an adjacent empty piece (piece at index gridSize*gridSize - 1)
+    int emptyPieceValue = _gridSize * _gridSize - 1;
+    int emptyIndex = _puzzlePieces.indexOf(emptyPieceValue);
+    List<int> adjacentIndices = _getAdjacentIndices(tappedIndex);
 
     if (adjacentIndices.contains(emptyIndex)) {
       setState(() {
         // Swap pieces
-        int temp = _puzzlePieces[index];
-        _puzzlePieces[index] = _puzzlePieces[emptyIndex];
+        int temp = _puzzlePieces[tappedIndex];
+        _puzzlePieces[tappedIndex] = _puzzlePieces[emptyIndex];
         _puzzlePieces[emptyIndex] = temp;
         _moves++;
 
@@ -119,13 +95,13 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
 
   List<int> _getAdjacentIndices(int index) {
     List<int> adjacent = [];
-    int row = index ~/ 3;
-    int col = index % 3;
+    int row = index ~/ _gridSize;
+    int col = index % _gridSize;
 
-    if (row > 0) adjacent.add(index - 3); // Top
-    if (row < 2) adjacent.add(index + 3); // Bottom
+    if (row > 0) adjacent.add(index - _gridSize); // Top
+    if (row < _gridSize - 1) adjacent.add(index + _gridSize); // Bottom
     if (col > 0) adjacent.add(index - 1); // Left
-    if (col < 2) adjacent.add(index + 1); // Right
+    if (col < _gridSize - 1) adjacent.add(index + 1); // Right
 
     return adjacent;
   }
@@ -163,18 +139,29 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
               const Icon(Icons.celebration, size: 80, color: Colors.amber),
               const SizedBox(height: 16),
               const Text(
-                '🎉 Great Job! 🎉',
+                '🎉 සුබ පැතුම්! 🎉',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               Text(
-                'You transformed sadness into happiness!\nCompleted in $_moves moves.',
+                'ඔබ සතුටු මුහුණ සාර්ථකව නිර්මාණය කළා!\nපියවර ගණන: $_moves',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
+              const SizedBox(height: 16),
+              if (widget.happyFaceImage != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    widget.happyFaceImage!,
+                    height: 150,
+                    width: 150,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               const SizedBox(height: 8),
               const Text(
-                'Remember: Every dark cloud has a silver lining! ☀️',
+                'ඔබේ සතුටු මුහුණ මෙන්න! 😊',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -191,13 +178,12 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MusicRecommendationScreen(
-                      emotion: widget.detectedEmotion,
-                    ),
+                    builder: (context) =>
+                        MusicRecommendationScreen(emotion: 'happy'),
                   ),
                 );
               },
-              child: const Text('Listen to Music'),
+              child: const Text('සංගීතය අසන්න'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -210,7 +196,7 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                 _celebrationController.reset();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-              child: const Text('Play Again'),
+              child: const Text('නැවත ක්‍රීඩා කරන්න'),
             ),
           ],
         ),
@@ -218,12 +204,91 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
     });
   }
 
+  Widget _buildPuzzlePiece(int pieceIndex, int displayIndex, double pieceSize) {
+    bool isCorrect = _puzzlePieces[displayIndex] == _correctOrder[displayIndex];
+    bool isEmpty = pieceIndex == _gridSize * _gridSize - 1;
+
+    if (isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      );
+    }
+
+    if (_decodedImage == null || !_imageLoaded) {
+      // Fallback to colored tiles while loading
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.purple.shade300,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isCorrect ? Colors.green : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '${pieceIndex + 1}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Calculate the source rectangle for this piece from the original image
+    int pieceRow = pieceIndex ~/ _gridSize;
+    int pieceCol = pieceIndex % _gridSize;
+    double srcPieceWidth = _decodedImage!.width / _gridSize;
+    double srcPieceHeight = _decodedImage!.height / _gridSize;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isCorrect ? Colors.green.shade400 : Colors.white,
+          width: isCorrect ? 3 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(2, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: CustomPaint(
+          size: Size(pieceSize, pieceSize),
+          painter: PuzzlePiecePainter(
+            image: _decodedImage!,
+            srcRect: Rect.fromLTWH(
+              pieceCol * srcPieceWidth,
+              pieceRow * srcPieceHeight,
+              srcPieceWidth,
+              srcPieceHeight,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    double puzzleSize = MediaQuery.of(context).size.width - 48;
+    double pieceSize = (puzzleSize - 16) / _gridSize;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Transform Your Mood'),
+        title: const Text('සතුටු මුහුණ ප්‍රහේලිකාව'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -253,8 +318,8 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.sentiment_dissatisfied,
-                          color: Colors.blue.shade400,
+                          Icons.extension,
+                          color: Colors.orange.shade400,
                           size: 30,
                         ),
                         const SizedBox(width: 8),
@@ -262,14 +327,14 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                         const SizedBox(width: 8),
                         Icon(
                           Icons.sentiment_very_satisfied,
-                          color: Colors.amber.shade400,
+                          color: Colors.green.shade400,
                           size: 30,
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Solve the puzzle to transform\nsadness into happiness!',
+                      'ප්‍රහේලිකාව විසඳා ඔබේ\nසතුටු මුහුණ නිර්මාණය කරන්න!',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
@@ -278,9 +343,9 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Moves: $_moves',
+                      'පියවර: $_moves',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 18,
                         color: Colors.purple.shade400,
                         fontWeight: FontWeight.bold,
                       ),
@@ -289,6 +354,7 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                 ),
               ),
               const SizedBox(height: 20),
+
               // Puzzle Grid
               Container(
                 padding: const EdgeInsets.all(8),
@@ -303,72 +369,39 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                     ),
                   ],
                 ),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 4,
-                    mainAxisSpacing: 4,
-                  ),
-                  itemCount: 9,
-                  itemBuilder: (context, index) {
-                    int pieceIndex = _puzzlePieces[index];
-                    bool isCorrect =
-                        _puzzlePieces[index] == _correctOrder[index];
-                    bool isEmpty = pieceIndex == 8;
-
-                    return GestureDetector(
-                      onTap: () => _onPieceTap(index),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: isEmpty
-                              ? Colors.grey.shade200
-                              : (_isSolved
-                                    ? _happyColors[pieceIndex]
-                                    : (isCorrect
-                                          ? _happyColors[pieceIndex]
-                                          : _sadColors[pieceIndex])),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isCorrect && !isEmpty
-                                ? Colors.green.shade300
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                          boxShadow: isEmpty
-                              ? null
-                              : [
-                                  BoxShadow(
-                                    color:
-                                        (_isSolved
-                                                ? _happyColors[pieceIndex]
-                                                : _sadColors[pieceIndex])
-                                            .withOpacity(0.4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                child: _imageLoaded || widget.happyFaceImage == null
+                    ? GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: _gridSize,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
                         ),
-                        child: isEmpty
-                            ? null
-                            : Center(
-                                child: Icon(
-                                  _isSolved || isCorrect
-                                      ? _happyIcons[pieceIndex]
-                                      : _sadIcons[pieceIndex],
-                                  size: 40,
-                                  color: Colors.white,
-                                ),
+                        itemCount: _gridSize * _gridSize,
+                        itemBuilder: (context, index) {
+                          int pieceIndex = _puzzlePieces[index];
+                          return GestureDetector(
+                            onTap: () => _onPieceTap(index),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              child: _buildPuzzlePiece(
+                                pieceIndex,
+                                index,
+                                pieceSize,
                               ),
+                            ),
+                          );
+                        },
+                      )
+                    : const SizedBox(
+                        height: 300,
+                        child: Center(child: CircularProgressIndicator()),
                       ),
-                    );
-                  },
-                ),
               ),
               const SizedBox(height: 20),
-              // Target preview
+
+              // Target preview - show the complete happy face
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -378,7 +411,7 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                 child: Column(
                   children: [
                     const Text(
-                      'Target: Happy State 😊',
+                      'ඉලක්කය: සතුටු මුහුණ 😊',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -386,77 +419,98 @@ class _EmotionPuzzleScreenState extends State<EmotionPuzzleScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 100,
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 9,
-                              crossAxisSpacing: 2,
-                              mainAxisSpacing: 2,
-                            ),
-                        itemCount: 9,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: _happyColors[index],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                _happyIcons[index],
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          );
-                        },
+                    if (widget.happyFaceImage != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(
+                          widget.happyFaceImage!,
+                          height: 120,
+                          width: 120,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.sentiment_very_satisfied,
+                            size: 60,
+                            color: Colors.amber,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-              // Skip button
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MusicRecommendationScreen(
-                        emotion: widget.detectedEmotion,
-                      ),
+
+              // Action buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Shuffle button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _moves = 0;
+                        _isSolved = false;
+                        _shufflePuzzle();
+                      });
+                    },
+                    icon: const Icon(Icons.shuffle),
+                    label: const Text('මිශ්‍ර කරන්න'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
                     ),
-                  );
-                },
-                child: const Text(
-                  'Skip to Music →',
-                  style: TextStyle(color: Colors.purple, fontSize: 16),
-                ),
+                  ),
+                  // Skip button
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MusicRecommendationScreen(
+                            emotion: widget.detectedEmotion,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.skip_next),
+                    label: const Text('සංගීතයට යන්න'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.purple),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: 'Scan'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
     );
+  }
+}
+
+// Custom painter to draw a portion of the image
+class PuzzlePiecePainter extends CustomPainter {
+  final ui.Image image;
+  final Rect srcRect;
+
+  PuzzlePiecePainter({required this.image, required this.srcRect});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dstRect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawImageRect(image, srcRect, dstRect, Paint());
+  }
+
+  @override
+  bool shouldRepaint(covariant PuzzlePiecePainter oldDelegate) {
+    return oldDelegate.srcRect != srcRect;
   }
 }

@@ -30,40 +30,35 @@ class OnboardingScreen1 extends StatelessWidget {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
-                    // Top section with logo
+                    // Top section with logo - Increased flex to push content down
                     Expanded(
-                      flex: 5,
+                      flex: 6,
                       child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 200,
-                              height: 200,
-                              child: Image.asset(
-                                'assets/images/logo.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                          ],
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
-                    // Bottom section with text on green background
+                    // Bottom section
                     Expanded(
-                      flex: 5,
+                      flex: 4,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 40),
+                            // Spacer pushes text further down within this flex area
+                            const SizedBox(height: 20),
                             const Text(
                               'සුව මනස වෙත සාදරයෙන්\nපිළිගනිමු!',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 26, // Increased size
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -73,7 +68,7 @@ class OnboardingScreen1 extends StatelessWidget {
                               'සෑම දිනකම සතුටින්, සන්සුන්ව සහ\nඅපූරුව දැනීම සඳහා ඔබේ මිත්‍රශීලී\nසහයක',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 16, // Increased size
                                 color: Colors.black87,
                                 height: 1.4,
                               ),
@@ -83,40 +78,21 @@ class OnboardingScreen1 extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                                _buildIndicator(true),
                                 const SizedBox(width: 8),
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                                _buildIndicator(false),
                                 const SizedBox(width: 8),
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                                _buildIndicator(false),
                               ],
                             ),
-                            const SizedBox(height: 20),
-                            // Next button
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 16.0),
+                            // Pushes the button to the very bottom of the Column
+                            const Spacer(),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 40.0,
+                              ), // Moves button down
+                              child: Align(
+                                alignment: Alignment.centerRight,
                                 child: Container(
                                   width: 56,
                                   height: 56,
@@ -160,6 +136,18 @@ class OnboardingScreen1 extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper method for cleaner code
+  Widget _buildIndicator(bool isActive) {
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+        shape: BoxShape.circle,
       ),
     );
   }

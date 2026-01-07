@@ -30,40 +30,34 @@ class OnboardingScreen3 extends StatelessWidget {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
-                    // Top section with logo
+                    // Top section with logo - flex 6 to push content down
                     Expanded(
-                      flex: 5,
+                      flex: 6,
                       child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 200,
-                              height: 200,
-                              child: Image.asset(
-                                'assets/images/logo.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                          ],
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
-                    // Bottom section with text on green background
+                    // Bottom section
                     Expanded(
-                      flex: 5,
+                      flex: 4,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 20),
                             const Text(
                               'ආරම්භ කරමු!',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 26,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -73,7 +67,7 @@ class OnboardingScreen3 extends StatelessWidget {
                               'ඔබේ ගමන ආරම්භ කිරීමට\nසූදානම්ද?\nඅපි ඔබ සමඟ සිටිමු!',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 16,
                                 color: Colors.black87,
                                 height: 1.4,
                               ),
@@ -83,107 +77,45 @@ class OnboardingScreen3 extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                                _buildIndicator(false),
                                 const SizedBox(width: 8),
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                                _buildIndicator(false),
                                 const SizedBox(width: 8),
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
+                                _buildIndicator(true),
                               ],
                             ),
-                            const SizedBox(height: 20),
-                            // Navigation buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // Back button
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 16.0),
-                                  child: Container(
-                                    width: 56,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.arrow_back,
-                                        color: Colors.green,
-                                        size: 28,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
+
+                            const Spacer(),
+
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 40.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Back button
+                                  _buildNavButton(
+                                    icon: Icons.arrow_back,
+                                    onPressed: () => Navigator.pop(context),
                                   ),
-                                ),
-                                // Finish button
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 16.0),
-                                  child: Container(
-                                    width: 56,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
+                                  // Next button (Now matches Screen 1 and 2)
+                                  _buildNavButton(
+                                    icon: Icons.arrow_forward,
+                                    onPressed: () {
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const MyHomePage(
+                                                title: 'MoodTunes',
+                                              ),
                                         ),
-                                      ],
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.check,
-                                        color: Colors.green,
-                                        size: 28,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const MyHomePage(
-                                                  title: 'MoodTunes',
-                                                ),
-                                          ),
-                                          (route) => false,
-                                        );
-                                      },
-                                    ),
+                                        (route) => false,
+                                      );
+                                    },
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -195,6 +127,42 @@ class OnboardingScreen3 extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildIndicator(bool isActive) {
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildNavButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.green, size: 28),
+        onPressed: onPressed,
       ),
     );
   }
