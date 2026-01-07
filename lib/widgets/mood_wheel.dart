@@ -40,7 +40,7 @@ class _MoodWheelWidgetState extends State<MoodWheelWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ඔබට අද හිතෙන්නේ කොහොමද?',
+          'අද ඔබට මොන වගේ හැඟීමක්ද තියෙන්නේ?',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

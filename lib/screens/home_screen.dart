@@ -146,22 +146,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                           SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Icon(
-                                _aiAvailable ? Icons.psychology : Icons.psychology_outlined,
-                                color: _aiAvailable ? Colors.blue : Colors.grey,
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                _aiAvailable ? 'AI Model Ready' : 'AI Model Unavailable',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: _aiAvailable ? Colors.blue : Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
+                          // Row(
+                          //   children: [
+                          //     Icon(
+                          //       _aiAvailable ? Icons.psychology : Icons.psychology_outlined,
+                          //       color: _aiAvailable ? Colors.blue : Colors.grey,
+                          //     ),
+                          //     SizedBox(width: 10),
+                          //     Text(
+                          //       _aiAvailable ? 'AI Model Ready' : 'AI Model Unavailable',
+                          //       style: TextStyle(
+                          //         fontSize: 14,
+                          //         color: _aiAvailable ? Colors.blue : Colors.grey,
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
                         ],
                       ),
                     ),
@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'සාදනු ලැබූ කථා',
+                        'ළමා හිතකාමී ජන කතා',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -220,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Icon(Icons.add, color: Colors.white, size: 24),
                           SizedBox(width: 10),
                           Text(
-                            'නව කථාවක්',
+                            'ජන කථාවක්',
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.white,
@@ -233,34 +233,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   
                   // Test button for debugging (optional - you can remove this later)
-                  SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _testDirectGeneration,
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        side: BorderSide(color: Colors.red),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(width: 8),
-                          Text(
-                            'TEST: Direct Generation (Debug)',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // SizedBox(height: 10),
+                  // SizedBox(
+                  //   width: double.infinity,
+                  //   child: OutlinedButton(
+                  //     onPressed: _testDirectGeneration,
+                  //     style: OutlinedButton.styleFrom(
+                  //       padding: EdgeInsets.symmetric(vertical: 12),
+                  //       shape: RoundedRectangleBorder(
+                  //         borderRadius: BorderRadius.circular(15),
+                  //       ),
+                  //       side: BorderSide(color: Colors.red),
+                  //     ),
+                  //     child: Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         SizedBox(width: 8),
+                  //         Text(
+                  //           'TEST: Direct Generation (Debug)',
+                  //           style: TextStyle(
+                  //             fontSize: 14,
+                  //             color: Colors.red,
+                  //             fontWeight: FontWeight.w500,
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   
                   SizedBox(height: 20),
                   

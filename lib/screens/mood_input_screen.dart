@@ -513,25 +513,25 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
       'emoji': '☀️',
       'color': Colors.orange,
       'sinhala': 'සූර්යාලෝක',
-      'description': 'Peaceful, joyful'
+      'description': 'සාමකාමී, ප්රීතිමත්'
     },
     'rainy': {
       'emoji': '🌧️',
       'color': Colors.blue,
       'sinhala': 'වර්ෂාව',
-      'description': 'Sad, reflective'
+      'description': 'දුක්ඛිත, පරාවර්තක'
     },
     'stormy': {
       'emoji': '⛈️',
       'color': Colors.indigo,
       'sinhala': 'කුණාටුව',
-      'description': 'Overwhelmed, angry'
+      'description': 'අධික ලෙස, කෝපයෙන්'
     },
     'foggy': {
       'emoji': '🌫️',
       'color': Colors.grey,
       'sinhala': 'මීදුම',
-      'description': 'Confused, numb'
+      'description': 'ව්‍යාකූල, උදාසීන'
     },
   };
   
@@ -547,7 +547,7 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ඔබගේ හිත තුළ කුමන කාලගුණයක් ද?',
+          'ඔබගේ හිත තුළ තියෙන්නේ මොන වගේ කාලගුණයක්ද?',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -664,17 +664,17 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
   final Map<String, Map<String, dynamic>> _characterData = {
     'hare': {
       'sinhala': 'කුරුල්ලා',
-      'description': 'Worried but clever',
+      'description': 'කනස්සල්ලෙන් නමුත් දක්ෂයි',
       'color': Colors.brown,
     },
     'lion': {
       'sinhala': 'සිංහයා',
-      'description': 'Strong but lonely',
+      'description': 'ශක්තිමත් නමුත් තනිකම',
       'color': Colors.orange,
     },
     'elephant': {
       'sinhala': 'අලියා',
-      'description': 'Kind but carrying a heavy heart',
+      'description': 'කරුණාවන්ත නමුත් බර හදවතක් උසුලයි',
       'color': Colors.grey,
     },
   };
@@ -691,7 +691,7 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ඔබ අද හැගෙන්නේ කුමන ප්‍රබන්ධ චරිතයක් වගේද?',
+          'ඔබ අද හැගෙන්නේ කුමන ප්‍රධාන චරිතයක් වගේද?',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

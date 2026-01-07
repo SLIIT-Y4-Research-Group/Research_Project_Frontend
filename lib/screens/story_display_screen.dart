@@ -325,28 +325,28 @@ class _StoryDisplayScreenState extends State<StoryDisplayScreen> {
                           style: TextStyle(color: Colors.grey, fontSize: 14),
                         ),
                         SizedBox(width: 16),
-                        Icon(Icons.remove_red_eye, size: 16, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          '${widget.story.viewCount} නරඹීම්',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                        SizedBox(width: 16),
-                        Icon(Icons.favorite, size: 16, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          '${widget.story.likeCount} ලයික්',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                        if (!widget.story.isPublic) ...[
-                          SizedBox(width: 16),
-                          Icon(Icons.lock, size: 16, color: Colors.grey),
-                          SizedBox(width: 4),
-                          Text(
-                            'පෞද්ගලික',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                        ],
+                        // Icon(Icons.remove_red_eye, size: 16, color: Colors.grey),
+                        // SizedBox(width: 4),
+                        // Text(
+                        //   '${widget.story.viewCount} නරඹීම්',
+                        //   style: TextStyle(color: Colors.grey, fontSize: 14),
+                        // ),
+                        // SizedBox(width: 16),
+                        // Icon(Icons.favorite, size: 16, color: Colors.grey),
+                        // SizedBox(width: 4),
+                        // Text(
+                        //   '${widget.story.likeCount} ලයික්',
+                        //   style: TextStyle(color: Colors.grey, fontSize: 14),
+                        // ),
+                        // if (!widget.story.isPublic) ...[
+                        //   SizedBox(width: 16),
+                        //   Icon(Icons.lock, size: 16, color: Colors.grey),
+                        //   SizedBox(width: 4),
+                        //   Text(
+                        //     'පෞද්ගලික',
+                        //     style: TextStyle(color: Colors.grey, fontSize: 14),
+                        //   ),
+                        // ],
                       ],
                     ),
                     
@@ -459,29 +459,29 @@ class _StoryDisplayScreenState extends State<StoryDisplayScreen> {
             SizedBox(height: 24),
             
             // Tags
-            if (widget.story.tags.isNotEmpty) ...[
-              Text(
-                'ටැග්',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.story.tags.map((tag) {
-                  return Chip(
-                    label: Text(tag),
-                    backgroundColor: Colors.grey[100],
-                    labelStyle: TextStyle(fontSize: 12),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 24),
-            ],
+            // if (widget.story.tags.isNotEmpty) ...[
+            //   Text(
+            //     'ටැග්',
+            //     style: TextStyle(
+            //       fontSize: 16,
+            //       fontWeight: FontWeight.bold,
+            //       color: Colors.grey[800],
+            //     ),
+            //   ),
+            //   SizedBox(height: 8),
+            //   Wrap(
+            //     spacing: 8,
+            //     runSpacing: 8,
+            //     children: widget.story.tags.map((tag) {
+            //       return Chip(
+            //         label: Text(tag),
+            //         backgroundColor: Colors.grey[100],
+            //         labelStyle: TextStyle(fontSize: 12),
+            //       );
+            //     }).toList(),
+            //   ),
+            //   SizedBox(height: 24),
+            // ],
             
             // Therapeutic message
             Card(
