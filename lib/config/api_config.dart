@@ -1,14 +1,20 @@
 class ApiConfig {
+  // ================= COMPANY EMOTION API =================
   // Backend API Base URL
-  // Change this based on your environment:
-  // - Local development: 'http://localhost:8000'
-  // - Mobile device on same network: 'http://YOUR_COMPUTER_IP:8000'
-  // - Deployed backend: 'https://your-backend-url.com'
+  // Local dev: http://localhost:8000
+  // Mobile device: http://YOUR_PC_IP:8000
   static const String baseUrl = 'http://localhost:8000';
 
-  // Emotion API endpoints
   static const String emotionPredictImage = '$baseUrl/emotion/predict-image';
   static const String emotionUpload = '$baseUrl/emotion/upload';
-  static const String emotionPredictWithHappyFace = '$baseUrl/emotion/predict-with-happy-face';
-}
+  static const String emotionPredictWithHappyFace =
+      '$baseUrl/emotion/predict-with-happy-face';
 
+  // ================= YOUR SINHALA MOOD API =================
+  // Sinhala Mood Classification API
+  static const String BASE_URL = 'http://127.0.0.1:8000';
+
+  static const String PREDICT_ENDPOINT = '$BASE_URL/mood/predict';
+  static const String PREDICT_OVERALL_ENDPOINT =
+      '$BASE_URL/mood/predict_overall';
+}
