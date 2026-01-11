@@ -1,49 +1,51 @@
 import 'package:flutter/material.dart';
-import 'screens/start_screen.dart';
-import 'screens/welcome_screen.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'screens/start_screen.dart';
+import 'screens/tri_fusion_input_screen.dart';
+import 'screens/tri_result_happy_screen.dart';
+import 'screens/tri_result_sad_screen.dart';
+
+import 'screens/art_theraphy_screen_01.dart';
+import 'screens/art_theraphy_screen_02.dart';
+import 'screens/art_theraphy_screen_03.dart';
+
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      title: "Suwamanasa",
+      debugShowCheckedModeBanner: false,
       home: const StartScreen(),
+      routes: {
+        "/tri_fusion": (_) => const TriFusionInputScreen(),
+        "/tri_result_happy": (_) => const TriResultHappyScreen(),
+        "/tri_result_sad": (_) => const TriResultSadScreen(),
+
+        "/art_theraphy_screen_01": (_) => const ArtTherapyStep1Screen(),
+        "/art_theraphy_screen_02": (_) => const ArtTherapyStep2Screen(),
+        "/art_theraphy_screen_03": (_) => const ArtTherapyStep3Screen(),
+
+        // placeholders if you don’t have these yet:
+        "/therapy_option_2": (_) => const _PlaceholderScreen(title: "Therapy Option 2"),
+        "/therapy_option_3": (_) => const _PlaceholderScreen(title: "Therapy Option 3"),
+      },
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key, required this.title});
-
+class _PlaceholderScreen extends StatelessWidget {
   final String title;
+  const _PlaceholderScreen({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return const WelcomeScreen();
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Text("$title screen not added yet.")),
+    );
   }
 }

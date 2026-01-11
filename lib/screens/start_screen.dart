@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding_screen_1.dart';
+import 'onboarding_lottie_screen.dart';
 
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
@@ -19,9 +20,9 @@ class StartScreen extends StatelessWidget {
                 'assets/images/Ellipse1.png',
                 width: 200,
                 height: 200,
-                fit: BoxFit.contain,
               ),
             ),
+
             // Bottom left eclipse image
             Positioned(
               bottom: -80,
@@ -30,17 +31,18 @@ class StartScreen extends StatelessWidget {
                 'assets/images/Ellipse2.png',
                 width: 250,
                 height: 250,
-                fit: BoxFit.contain,
               ),
             ),
+
             // Main content
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(flex: 2),
-                  // Logo with circular background
-                  Container(
+
+                  // Logo
+                  SizedBox(
                     width: 350,
                     height: 350,
                     child: Image.asset(
@@ -48,8 +50,37 @@ class StartScreen extends StatelessWidget {
                       fit: BoxFit.contain,
                     ),
                   ),
-                  const SizedBox(height: 40),
+
+                  const SizedBox(height: 30),
+
+                  Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 32),
+  child: OutlinedButton.icon(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const OnboardingLottieScreen(),
+        ),
+      );
+    },
+    icon: const Icon(Icons.auto_awesome),
+    label: const Text('Start Emotional Journey'),
+    style: OutlinedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      foregroundColor: Colors.black87,
+      side: const BorderSide(color: Colors.grey),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+    ),
+  ),
+),
+
+
+                  const SizedBox(height: 20),
                   const Spacer(flex: 1),
+
                   // Continue button
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -60,12 +91,12 @@ class StartScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const OnboardingScreen1(),
+                              builder: (_) => const OnboardingScreen1(),
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF4EAA57),
+                          backgroundColor: const Color(0xFF4EAA57),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -83,15 +114,16 @@ class StartScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   // Skip button
                   TextButton(
                     onPressed: () {
-                      // Skip to main app
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen1(),
+                          builder: (_) => const OnboardingScreen1(),
                         ),
                         (route) => false,
                       );
@@ -105,6 +137,7 @@ class StartScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 40),
                 ],
               ),
