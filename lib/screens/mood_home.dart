@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 
 import '../config/api_config.dart';
+import '../models/validate_answer_response.dart';
 import '../widgets/listening_indicator.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/mood_badge.dart';
@@ -54,6 +55,8 @@ class _MoodHomeState extends State<MoodHome> {
   // Using centralized API configuration
   final String apiUrl = ApiConfig.PREDICT_ENDPOINT;
   final String overallUrl = ApiConfig.PREDICT_OVERALL_ENDPOINT;
+  final String validateUrl = ApiConfig.VALIDATE_ANSWER_ENDPOINT;
+  final String predictQuestionUrl = ApiConfig.PREDICT_QUESTION_ENDPOINT;
 
 
 
@@ -215,6 +218,7 @@ class _MoodHomeState extends State<MoodHome> {
 
   Future<void> checkQuestionMood(int questionIndex) async {
     final question = questions[questionIndex];
+    final questionId = questionIndex + 1; // Convert 0-4 index to 1-5 question ID
     
     if (question.answer.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -231,36 +235,405 @@ class _MoodHomeState extends State<MoodHome> {
       questions[questionIndex].mood = "";
     });
 
+    // First, validate the answer
+    final validation = await validateAnswer(questionId, question.answer.trim());
+    
+    // Handle validation failure
+    if (validation == null) {
+      setState(() {
+        questions[questionIndex].loadingMood = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Validation failed. Please try again."),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Handle validation statuses
+    if (validation.isEmpty) {
+      setState(() {
+        questions[questionIndex].loadingMood = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("කරුණාකර උත්තරයක් ලබා දෙන්න."),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (validation.needsMoreInfo) {
+      setState(() {
+        questions[questionIndex].loadingMood = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("ටිකක් විස්තර කරලා කියන්න පුළුවන්ද?"),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (validation.isIrrelevant) {
+      // Try to get mood from backend even if validator says irrelevant
+      // Backend might detect neutral phrases and return Normal
+      try {
+        final res = await http.post(
+          Uri.parse(predictQuestionUrl),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"question_id": questionId, "text": question.answer}),
+        );
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body);
+          setState(() {
+            questions[questionIndex].mood = data["mood"]?.toString() ?? "No mood";
+            questions[questionIndex].loadingMood = false;
+          });
+          return;
+        }
+      } catch (e) {
+        // If backend call fails, show irrelevant message
+      }
+      
+      // If we reach here, either API failed or returned non-200
+      setState(() {
+        questions[questionIndex].loadingMood = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("ඔයාගේ උත්තරේ ප්‍රශ්නයට සම්බන්ධ නැහැ වගේ. ටිකක් විස්තර කරලා කියන්න."),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Handle YES/NO answers for Q2-Q5
+    if (validation.isYesNoAnswer) {
+      final answerText = validation.normalized.isNotEmpty 
+          ? validation.normalized.toLowerCase() 
+          : question.answer.trim().toLowerCase();
+      
+      // Detect YES or NO
+      final isYes = answerText.contains('ඔව්') || 
+                    answerText.contains('yes') || 
+                    answerText == 'ඔව්' ||
+                    answerText == 'yes';
+      
+      String mood;
+      if (questionId == 5) {
+        // Q5: YES = Happy, NO = Normal
+        mood = isYes ? "සතුටුයි" : "සාමාන්‍ය";
+      } else {
+        // Q2, Q3, Q4: YES = Bad, NO = Happy
+        mood = isYes ? "දුකයි / හොඳ නෑ" : "සතුටුයි";
+      }
+      
+      setState(() {
+        questions[questionIndex].mood = mood;
+        questions[questionIndex].loadingMood = false;
+      });
+      return;
+    }
+
+    // Handle Q1_DIRECT_MOOD - direct mood from backend
+    if (validation.isQ1DirectMood) {
+      String moodLabel;
+      final directMood = validation.directMood?.toLowerCase() ?? '';
+      
+      if (directMood.contains('happy')) {
+        moodLabel = "සතුටුයි";
+      } else if (directMood.contains('normal')) {
+        moodLabel = "සාමාන්‍ය";
+      } else if (directMood.contains('bad')) {
+        moodLabel = "දුකයි / හොඳ නෑ";
+      } else {
+        moodLabel = validation.directMood ?? "සාමාන්‍ය";
+      }
+      
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[questionIndex].answer = validation.normalized;
+        }
+        questions[questionIndex].mood = moodLabel;
+        questions[questionIndex].loadingMood = false;
+      });
+      return;
+    }
+
+    // Handle VALID_TEXT - call mood prediction endpoint
+    if (validation.isValidText) {
+      try {
+        final res = await http.post(
+          Uri.parse(predictQuestionUrl),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"question_id": questionId, "text": question.answer}),
+        );
+
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body);
+          setState(() {
+            questions[questionIndex].mood = data["mood"]?.toString() ?? "No mood";
+          });
+        } else {
+          setState(() {
+            questions[questionIndex].mood = "Error: ${res.statusCode}";
+          });
+        }
+      } catch (e) {
+        setState(() {
+          questions[questionIndex].mood = "Connection Error: $e\n\nCheck:\n- Backend running?\n- Same WiFi?\n- IP: ${ApiConfig.BASE_URL}";
+        });
+      } finally {
+        setState(() {
+          questions[questionIndex].loadingMood = false;
+        });
+      }
+      return;
+    }
+
+    // Unknown validation status
+    setState(() {
+      questions[questionIndex].loadingMood = false;
+    });
+  }
+
+  Future<ValidateAnswerResponse?> validateAnswer(int questionId, String text) async {
     try {
       final res = await http.post(
-        Uri.parse(apiUrl),
+        Uri.parse(validateUrl),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"text": question.answer}),
+        body: jsonEncode({"question_id": questionId, "text": text}),
       );
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        setState(() {
-          questions[questionIndex].mood = data["mood"]?.toString() ?? "No mood";
-        });
+        return ValidateAnswerResponse.fromJson(data);
       } else {
+        // If validation endpoint fails, return null and allow continuation
         setState(() {
-          questions[questionIndex].mood = "Error: ${res.statusCode}";
+          mood = "Validation error: ${res.statusCode}";
         });
+        return null;
       }
     } catch (e) {
+      // If validation endpoint fails, return null and allow continuation
       setState(() {
-        questions[questionIndex].mood = "Connection Error: $e\n\nCheck:\n- Backend running?\n- Same WiFi?\n- IP: ${ApiConfig.BASE_URL}";
+        mood = "Validation connection error: $e";
       });
-    } finally {
+      return null;
+    }
+  }
+
+  Future<void> handleNextQuestion() async {
+    final currentAnswer = questions[currentQuestionIndex].answer.trim();
+    
+    // Validate answer
+    final validation = await validateAnswer(currentQuestionIndex + 1, currentAnswer);
+    
+    // If validation failed (network error), show warning but allow continuation
+    if (validation == null) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("වලංගු කිරීමේ දෝෂයක්"),
+          content: const Text("ඔබේ පිළිතුර වලංගු කිරීමට නොහැකි විය. කෙසේ වුවද ඉදිරියට යන්නද?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("නැත"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("ඔව්"),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldContinue == true) {
+        nextQuestion();
+      }
+      return;
+    }
+    
+    // Handle validation status
+    if (validation.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("කරුණාකර උත්තරයක් ලබා දෙන්න."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
+    if (validation.needsMoreInfo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("ටිකක් විස්තර කරලා කියන්න පුළුවන්ද?"),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    
+    if (validation.isIrrelevant) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("ඔයාගේ උත්තරේ ප්‍රශ්නයට සම්බන්ධ නැහැ වගේ. ටිකක් විස්තර කරලා කියන්න."),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    
+    if (validation.isYesNoAnswer) {
+      // Store yes/no answer without calling mood prediction
+      // Use normalized answer if available
+      final answerText = validation.normalized.isNotEmpty 
+          ? validation.normalized.toLowerCase() 
+          : questions[currentQuestionIndex].answer.trim().toLowerCase();
+      
+      final isYes = answerText.contains('ඔව්') || 
+                    answerText.contains('yes') || 
+                    answerText == 'ඔව්' ||
+                    answerText == 'yes';
+      
+      final questionId = currentQuestionIndex + 1;
+      String mood;
+      if (questionId == 5) {
+        mood = isYes ? "සතුටුයි" : "සාමාන්‍ය";
+      } else {
+        // Q2, Q3, Q4: YES = Bad, NO = Happy
+        mood = isYes ? "දුකයි / හොඳ නෑ" : "සතුටුයි";
+      }
+      
       setState(() {
-        questions[questionIndex].loadingMood = false;
+        if (validation.normalized.isNotEmpty) {
+          questions[currentQuestionIndex].answer = validation.normalized;
+        }
+        questions[currentQuestionIndex].mood = mood;
       });
+      nextQuestion();
+      return;
+    }
+    
+    if (validation.isQ1DirectMood) {
+      // Q1 direct mood classification from backend
+      String moodLabel;
+      final directMood = validation.directMood?.toLowerCase() ?? '';
+      
+      if (directMood.contains('happy')) {
+        moodLabel = "සතුටුයි";
+      } else if (directMood.contains('normal')) {
+        moodLabel = "සාමාන්‍ය";
+      } else if (directMood.contains('bad')) {
+        moodLabel = "දුකයි / හොඳ නෑ";
+      } else {
+        moodLabel = validation.directMood ?? "සාමාන්‍ය";
+      }
+      
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[currentQuestionIndex].answer = validation.normalized;
+        }
+        questions[currentQuestionIndex].mood = moodLabel;
+      });
+      nextQuestion();
+      return;
+    }
+    
+    if (validation.isValidText) {
+      // Proceed with normal flow - no action needed here
+      // The mood prediction will be called separately if user clicks "result" button
+      nextQuestion();
+      return;
+    }
+    
+    // Unknown status - show warning and allow continuation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Unknown validation status: ${validation.status}"),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  bool _isYesNoAnswer(String answer) {
+    final lower = answer.toLowerCase().trim();
+    return lower == 'ඔව්' || lower == 'නෑ' || lower == 'නැහැ' || 
+           lower == 'yes' || lower == 'no' || lower == 'ok' ||
+           lower == 'ow' || lower == 'naa' || lower == 'නෑ';
+  }
+
+  bool _isYesAnswer(String answer) {
+    final lower = answer.toLowerCase().trim();
+    return lower == 'ඔව්' || lower == 'yes' || lower == 'ok' || lower == 'ow';
+  }
+
+  String _convertYesNoToSentence(int questionId, String answer) {
+    final isYes = _isYesAnswer(answer);
+    
+    switch (questionId) {
+      case 2:
+        return isYes 
+            ? "අද මට ගුරුවරු හෝ යාළුවන් සමඟ ගැටලුවක් තිබුණා"
+            : "අද මට ගුරුවරු හෝ යාළුවන් සමඟ ගැටලුවක් නැහැ";
+      case 3:
+        return isYes
+            ? "අද පාඩම්, homework හෝ exam නිසා මට ආතතිය තිබුණා"
+            : "අද පාඩම්, homework හෝ exam නිසා මට ආතතියක් නැහැ";
+      case 4:
+        return isYes
+            ? "අද මට හුඟක් මහන්සි වුණා සහ විවේකයක් අඩු වුණා"
+            : "අද මට මහන්සි අඩුයි සහ විවේකයක් තිබුණා";
+      case 5:
+        return isYes
+            ? "අද මට සතුටු වෙන්න හේතුවක් තිබුණා"
+            : "අද මට සතුටු වෙන්න විශේෂ හේතුවක් නැහැ";
+      default:
+        return answer; // Fallback
     }
   }
 
   Future<void> submitAllAnswers() async {
-  final answers = questions.map((q) => q.answer.trim()).where((a) => a.isNotEmpty).toList();
+  // Build answers list with YES/NO conversion
+  final answers = <String>[];
+  
+  for (int i = 0; i < questions.length; i++) {
+    final answer = questions[i].answer.trim();
+    if (answer.isEmpty) continue;
+    
+    final questionId = i + 1; // Convert to 1-5
+    
+    // Q1: always use the real answer
+    if (questionId == 1) {
+      answers.add(answer);
+    } else {
+      // Q2-Q5: check if it's YES/NO and convert to sentence
+      if (_isYesNoAnswer(answer)) {
+        answers.add(_convertYesNoToSentence(questionId, answer));
+      } else {
+        // Keep the real descriptive answer
+        answers.add(answer);
+      }
+    }
+  }
 
   if (answers.isEmpty) {
     setState(() => mood = "කරුණාකර අවම වශයෙන් එක් ප්‍රශ්නයකට පිළිතුරු දෙන්න");
@@ -308,6 +681,139 @@ class _MoodHomeState extends State<MoodHome> {
     setState(() => loadingMood = false);
   }
 }
+
+  Future<void> handleSubmitAll() async {
+    final currentAnswer = questions[currentQuestionIndex].answer.trim();
+    
+    // Validate the last answer before submitting all
+    final validation = await validateAnswer(currentQuestionIndex + 1, currentAnswer);
+    
+    // If validation failed (network error), show warning but allow continuation
+    if (validation == null) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("වලංගු කිරීමේ දෝෂයක්"),
+          content: const Text("ඔබේ අවසාන පිළිතුර වලංගු කිරීමට නොහැකි විය. කෙසේ වුවද ඉදිරියට යන්නද?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("නැත"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("ඔව්"),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldContinue == true) {
+        await submitAllAnswers();
+      }
+      return;
+    }
+    
+    // Handle validation status
+    if (validation.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("කරුණාකර උත්තරයක් ලබා දෙන්න."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
+    if (validation.needsMoreInfo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("ටිකක් විස්තර කරලා කියන්න පුළුවන්ද?"),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    
+    if (validation.isIrrelevant) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("ඔයාගේ උත්තරේ ප්‍රශ්නයට සම්බන්ධ නැහැ වගේ. ටිකක් විස්තර කරලා කියන්න."),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    
+    if (validation.isYesNoAnswer) {
+      // Store yes/no answer
+      final answerText = validation.normalized.isNotEmpty 
+          ? validation.normalized.toLowerCase() 
+          : questions[currentQuestionIndex].answer.trim().toLowerCase();
+      
+      final isYes = answerText.contains('ඔව්') || 
+                    answerText.contains('yes') || 
+                    answerText == 'ඔව්' ||
+                    answerText == 'yes';
+      
+      final questionId = currentQuestionIndex + 1;
+      String mood;
+      if (questionId == 5) {
+        mood = isYes ? "සතුටුයි" : "සාමාන්‍ය";
+      } else {
+        // Q2, Q3, Q4: YES = Bad, NO = Happy
+        mood = isYes ? "දුකයි / හොඳ නෑ" : "සතුටුයි";
+      }
+      
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[currentQuestionIndex].answer = validation.normalized;
+        }
+        questions[currentQuestionIndex].mood = mood;
+      });
+      await submitAllAnswers();
+      return;
+    }
+    
+    if (validation.isQ1DirectMood) {
+      // Q1 direct mood classification from backend
+      String moodLabel;
+      final directMood = validation.directMood?.toLowerCase() ?? '';
+      
+      if (directMood.contains('happy')) {
+        moodLabel = "සතුටුයි";
+      } else if (directMood.contains('normal')) {
+        moodLabel = "සාමාන්‍ය";
+      } else if (directMood.contains('bad')) {
+        moodLabel = "දුකයි / හොඳ නෑ";
+      } else {
+        moodLabel = validation.directMood ?? "සාමාන්‍ය";
+      }
+      
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[currentQuestionIndex].answer = validation.normalized;
+        }
+        questions[currentQuestionIndex].mood = moodLabel;
+      });
+      await submitAllAnswers();
+      return;
+    }
+    
+    if (validation.isValidText) {
+      // Proceed with normal submission
+      await submitAllAnswers();
+      return;
+    }
+    
+    // Unknown status - show warning
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Unknown validation status: ${validation.status}"),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
 
   @override
@@ -669,7 +1175,7 @@ Widget build(BuildContext context) {
                         child: ElevatedButton.icon(
                           onPressed: listening
                               ? null
-                              : (isLastQuestion ? submitAllAnswers : nextQuestion),
+                              : (isLastQuestion ? handleSubmitAll : handleNextQuestion),
                           icon: Icon(isLastQuestion ? Icons.check : Icons.arrow_forward),
                           label: Text(
                             isLastQuestion ? "ඉවරයි" : "ඊළඟ",

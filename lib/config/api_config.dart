@@ -17,4 +17,6 @@ class ApiConfig {
   static const String PREDICT_ENDPOINT = '$BASE_URL/mood/predict';
   static const String PREDICT_OVERALL_ENDPOINT =
       '$BASE_URL/mood/predict_overall';
+  static const String VALIDATE_ANSWER_ENDPOINT = '$BASE_URL/mood/validate_answer';
+  static const String PREDICT_QUESTION_ENDPOINT = '$BASE_URL/mood/predict_question';
 }
