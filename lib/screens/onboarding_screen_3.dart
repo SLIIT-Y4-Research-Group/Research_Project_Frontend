@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
+import 'package:my_first_app/screens/main_home_screen.dart';
+import '../screens/main_home_screen.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
@@ -21,6 +22,7 @@ class OnboardingScreen3 extends StatelessWidget {
               alignment: Alignment.bottomCenter,
             ),
           ),
+
           // Main content
           SingleChildScrollView(
             child: ConstrainedBox(
@@ -37,7 +39,7 @@ class OnboardingScreen3 extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
+                            SizedBox(
                               width: 200,
                               height: 200,
                               child: Image.asset(
@@ -50,6 +52,7 @@ class OnboardingScreen3 extends StatelessWidget {
                         ),
                       ),
                     ),
+
                     // Bottom section with text on green background
                     Expanded(
                       flex: 5,
@@ -59,6 +62,7 @@ class OnboardingScreen3 extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const SizedBox(height: 40),
+
                             const Text(
                               'ආරම්භ කරමු!',
                               textAlign: TextAlign.center,
@@ -68,7 +72,9 @@ class OnboardingScreen3 extends StatelessWidget {
                                 color: Colors.black,
                               ),
                             ),
+
                             const SizedBox(height: 15),
+
                             const Text(
                               'ඔබේ ගමන ආරම්භ කිරීමට\nසූදානම්ද?\nඅපි ඔබ සමඟ සිටිමු!',
                               textAlign: TextAlign.center,
@@ -78,7 +84,9 @@ class OnboardingScreen3 extends StatelessWidget {
                                 height: 1.4,
                               ),
                             ),
+
                             const SizedBox(height: 30),
+
                             // Page indicators
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -104,14 +112,16 @@ class OnboardingScreen3 extends StatelessWidget {
                                 Container(
                                   width: 12,
                                   height: 12,
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
                               ],
                             ),
+
                             const SizedBox(height: 20),
+
                             // Navigation buttons
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,7 +146,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                     child: IconButton(
                                       icon: const Icon(
                                         Icons.arrow_back,
-                                        color: Colors.green,
+                                        color: Color.fromRGBO(76, 175, 80, 1),
                                         size: 28,
                                       ),
                                       onPressed: () {
@@ -145,6 +155,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                     ),
                                   ),
                                 ),
+
                                 // Finish button
                                 Padding(
                                   padding: const EdgeInsets.only(right: 16.0),
@@ -173,9 +184,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
-                                                const MyHomePage(
-                                                  title: 'MoodTunes',
-                                                ),
+                                                const MainHomeScreen(),
                                           ),
                                           (route) => false,
                                         );
