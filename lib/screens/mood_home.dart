@@ -6,10 +6,13 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../config/api_config.dart';
 import '../models/validate_answer_response.dart';
+import '../services/auth_service.dart';
+import '../services/api_client.dart';
 import '../widgets/listening_indicator.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/mood_badge.dart';
 import 'mood_result_screen.dart';
+import 'welcome_screen.dart';
 
 
 
@@ -35,6 +38,7 @@ class MoodHome extends StatefulWidget {
 class _MoodHomeState extends State<MoodHome> {
   final stt.SpeechToText speech = stt.SpeechToText();
   final TextEditingController _transcriptController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   bool listening = false;
   bool isSpeechAvailable = false;
@@ -45,6 +49,11 @@ class _MoodHomeState extends State<MoodHome> {
   bool loadingMood = false;
   String _lastRecognizedWords = "";
   bool _isUserEditing = false;
+  
+  // Consent state (only for child users)
+  bool _isChildUser = false;
+  bool _alertsConsent = false;
+  bool _loadingConsent = false;
 
   //  Five questions
   late List<Question> questions;
@@ -71,6 +80,111 @@ class _MoodHomeState extends State<MoodHome> {
       Question(" අද ඔයාට සතුටු වෙන්න පුළුවන් මොකක් හරි හේතුවක් තියෙනවද?"),    
     ];
     _initSpeech();
+    _checkUserTypeAndLoadConsent();
+  }
+  
+  Future<void> _checkUserTypeAndLoadConsent() async {
+    final isChild = await _authService.isChild();
+    setState(() => _isChildUser = isChild);
+    
+    if (isChild) {
+      _loadChildConsent();
+    }
+  }
+  
+  Future<void> _loadChildConsent() async {
+    try {
+      final response = await ApiClient.getChildInfo();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _alertsConsent = data['alerts_consent'] ?? false;
+        });
+      }
+    } catch (e) {
+      // Silently fail - consent can be set later
+      debugPrint('Error loading consent: $e');
+    }
+  }
+  
+  Future<void> _updateConsent(bool value) async {
+    setState(() => _loadingConsent = true);
+    
+    try {
+      final response = await ApiClient.updateChildConsent(value);
+      if (response.statusCode == 200) {
+        setState(() => _alertsConsent = value);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(value 
+                ? 'Alert emails enabled' 
+                : 'Alert emails disabled'),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to update consent')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      setState(() => _loadingConsent = false);
+    }
+  }
+  
+  void _showConsentDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Alert Settings'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Allow guardian to receive alert emails about your mood',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Enable Alert Emails'),
+              value: _alertsConsent,
+              onChanged: _loadingConsent ? null : (value) {
+                Navigator.pop(context);
+                _updateConsent(value);
+              },
+              activeColor: const Color(0xFF22C55E),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _logout() async {
+    await _authService.logout();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   Future<void> _initSpeech() async {
@@ -217,10 +331,13 @@ class _MoodHomeState extends State<MoodHome> {
   }
 
   Future<void> checkQuestionMood(int questionIndex) async {
+    debugPrint("🔍 checkQuestionMood called for question $questionIndex");
+    
     final question = questions[questionIndex];
     final questionId = questionIndex + 1; // Convert 0-4 index to 1-5 question ID
     
     if (question.answer.trim().isEmpty) {
+      debugPrint("❌ Answer is empty");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("කරුණාකර මුලින්ම ප්‍රශ්නයට පිළිතුරු දෙන්න"),
@@ -237,9 +354,11 @@ class _MoodHomeState extends State<MoodHome> {
 
     // First, validate the answer
     final validation = await validateAnswer(questionId, question.answer.trim());
+    debugPrint("📋 Validation status: ${validation?.status ?? 'null'} (normalized: ${validation?.statusNormalized ?? 'null'})");
     
     // Handle validation failure
     if (validation == null) {
+      debugPrint("❌ Validation returned null - network or API error");
       setState(() {
         questions[questionIndex].loadingMood = false;
       });
@@ -256,6 +375,7 @@ class _MoodHomeState extends State<MoodHome> {
 
     // Handle validation statuses
     if (validation.isEmpty) {
+      debugPrint("⚠️ Status: EMPTY - stopping here");
       setState(() {
         questions[questionIndex].loadingMood = false;
       });
@@ -271,6 +391,7 @@ class _MoodHomeState extends State<MoodHome> {
     }
 
     if (validation.needsMoreInfo) {
+      debugPrint("⚠️ Status: NEED_MORE_INFO - stopping here");
       setState(() {
         questions[questionIndex].loadingMood = false;
       });
@@ -286,28 +407,7 @@ class _MoodHomeState extends State<MoodHome> {
     }
 
     if (validation.isIrrelevant) {
-      // Try to get mood from backend even if validator says irrelevant
-      // Backend might detect neutral phrases and return Normal
-      try {
-        final res = await http.post(
-          Uri.parse(predictQuestionUrl),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({"question_id": questionId, "text": question.answer}),
-        );
-
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body);
-          setState(() {
-            questions[questionIndex].mood = data["mood"]?.toString() ?? "No mood";
-            questions[questionIndex].loadingMood = false;
-          });
-          return;
-        }
-      } catch (e) {
-        // If backend call fails, show irrelevant message
-      }
-      
-      // If we reach here, either API failed or returned non-200
+      debugPrint("⚠️ Status: IRRELEVANT - stopping here, NOT calling predict_question");
       setState(() {
         questions[questionIndex].loadingMood = false;
       });
@@ -324,6 +424,7 @@ class _MoodHomeState extends State<MoodHome> {
 
     // Handle YES/NO answers for Q2-Q5
     if (validation.isYesNoAnswer) {
+      debugPrint("✅ Status: YES_NO - processing as yes/no answer");
       final answerText = validation.normalized.isNotEmpty 
           ? validation.normalized.toLowerCase() 
           : question.answer.trim().toLowerCase();
@@ -342,6 +443,7 @@ class _MoodHomeState extends State<MoodHome> {
         // Q2, Q3, Q4: YES = Bad, NO = Happy
         mood = isYes ? "දුකයි / හොඳ නෑ" : "සතුටුයි";
       }
+      debugPrint("✅ YES_NO mood determined: $mood");
       
       setState(() {
         questions[questionIndex].mood = mood;
@@ -352,6 +454,7 @@ class _MoodHomeState extends State<MoodHome> {
 
     // Handle Q1_DIRECT_MOOD - direct mood from backend
     if (validation.isQ1DirectMood) {
+      debugPrint("✅ Status: Q1_DIRECT_MOOD - using direct mood from validator");
       String moodLabel;
       final directMood = validation.directMood?.toLowerCase() ?? '';
       
@@ -364,6 +467,7 @@ class _MoodHomeState extends State<MoodHome> {
       } else {
         moodLabel = validation.directMood ?? "සාමාන්‍ය";
       }
+      debugPrint("✅ Q1_DIRECT_MOOD determined: $moodLabel");
       
       setState(() {
         if (validation.normalized.isNotEmpty) {
@@ -377,12 +481,15 @@ class _MoodHomeState extends State<MoodHome> {
 
     // Handle VALID_TEXT - call mood prediction endpoint
     if (validation.isValidText) {
+      debugPrint("✅ Status: VALID_TEXT - calling predict_question endpoint");
+      debugPrint("🌐 Calling predict_question with question_id=$questionId");
       try {
         final res = await http.post(
           Uri.parse(predictQuestionUrl),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({"question_id": questionId, "text": question.answer}),
         );
+        debugPrint("📡 predict_question response: ${res.statusCode}");
 
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
@@ -407,6 +514,7 @@ class _MoodHomeState extends State<MoodHome> {
     }
 
     // Unknown validation status
+    debugPrint("❌ Unknown validation status: ${validation.status} - this should not happen!");
     setState(() {
       questions[questionIndex].loadingMood = false;
     });
@@ -854,24 +962,45 @@ Widget build(BuildContext context) {
                     children: [
                       // Logo at top left
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          ClipOval(
-                            child: Image.asset(
-                              'assets/images/sidephoto.jpg',
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
-                            ),
+                          Row(
+                            children: [
+                              ClipOval(
+                                child: Image.asset(
+                                  'assets/images/sidephoto.jpg',
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                "සුව මනස",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            "සුව මනස",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                          // Settings and logout buttons (only for logged in child users)
+                          if (_isChildUser)
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.settings, color: Colors.white),
+                                  onPressed: _showConsentDialog,
+                                  tooltip: 'Alert Settings',
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.logout, color: Colors.white),
+                                  onPressed: _logout,
+                                  tooltip: 'Logout',
+                                ),
+                              ],
                             ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 20),

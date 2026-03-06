@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'scan_screen.dart'; // Import the ScanScreen
-import 'mood_start_screen.dart'; //  ADD: Import your mood start screen
+import 'onboarding_screen_1.dart'; //  ADD: Import onboarding screen
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MoodStartScreen(),
+                            builder: (context) => const OnboardingScreen1(),
                           ),
                         );
                       },

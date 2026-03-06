@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
+import 'mood_home.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
@@ -173,9 +173,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
-                                                const MyHomePage(
-                                                  title: 'MoodTunes',
-                                                ),
+                                                const MoodHome(),
                                           ),
                                           (route) => false,
                                         );
