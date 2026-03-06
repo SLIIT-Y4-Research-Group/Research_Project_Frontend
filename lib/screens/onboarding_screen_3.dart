@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_first_app/screens/main_home_screen.dart';
 import '../screens/main_home_screen.dart';
 
+import 'mood_home.dart';
+
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
 
@@ -185,6 +187,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 const MainHomeScreen(),
+
                                           ),
                                           (route) => false,
                                         );
