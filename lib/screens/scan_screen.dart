@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'music_recommendation_screen.dart';
@@ -40,6 +43,74 @@ class _ScanScreenState extends State<ScanScreen>
     super.dispose();
   }
 
+  Future<void> _showImageSourceDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'ඡායාරූපයක් තෝරන්න',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'ඔබට කැමරාව විවෘත කිරීමට හෝ නියැදි රූපයක් භාවිතා කිරීමට අවශ්‍යද?',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _openCamera();
+                },
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('කැමරාව විවෘත කරන්න'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _useSampleImage();
+                },
+                icon: const Icon(Icons.image),
+                label: const Text('නියැදි රූපය භාවිතා කරන්න'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4EAA57),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('අවලංගු කරන්න'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openCamera() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.camera,
@@ -51,6 +122,25 @@ class _ScanScreenState extends State<ScanScreen>
     }
   }
 
+  Future<void> _useSampleImage() async {
+    try {
+      final sampleImage = await _loadAssetImage('assets/images/sadperson.png');
+      setState(() => _capturedImage = sampleImage);
+    } catch (e) {
+      _showErrorDialog('නියැදි රූපය පූරණය කිරීමට නොහැකි විය: $e');
+    }
+  }
+
+  bool get _isMobile {
+    if (kIsWeb) return false;
+    return Platform.isAndroid || Platform.isIOS;
+  }
+
+  Future<Uint8List> _loadAssetImage(String assetPath) async {
+    final ByteData data = await rootBundle.load(assetPath);
+    return data.buffer.asUint8List();
+  }
+
   Future<void> _detectEmotion() async {
     if (_capturedImage == null) return;
 
@@ -58,39 +148,58 @@ class _ScanScreenState extends State<ScanScreen>
     _animationController.repeat();
 
     try {
-      // Convert image to base64
-      String base64Image = base64Encode(_capturedImage!);
+      // Check if running on mobile
+      if (_isMobile) {
+        // Use local images on mobile
+        await Future.delayed(const Duration(seconds: 2)); // Simulate processing
 
-      // Call backend API
-      final response = await http.post(
-        Uri.parse(ApiConfig.emotionPredictWithHappyFace),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'image': base64Image}),
-      );
+        _animationController.stop();
+        setState(() => _isScanning = false);
 
-      _animationController.stop();
-      setState(() => _isScanning = false);
+        // Load local sadperson.png as the detected face
+        final sadPersonImage = await _loadAssetImage(
+          'assets/images/sadperson.png',
+        );
+        // Load local happyperson.png for the puzzle
+        final happyPersonImage = await _loadAssetImage(
+          'assets/images/happyperson.png',
+        );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final String detectedEmotion = data['emotion_label'] ?? 'neutral';
-        final String? happyFaceBase64 = data['happy_face_image'];
-        final bool isHappy = data['is_happy'] ?? false;
-
-        Uint8List? happyFaceImage;
-        if (happyFaceBase64 != null) {
-          happyFaceImage = base64Decode(happyFaceBase64);
-        }
-
-        // Show choice dialog with the results
-        _showNavigationChoiceDialog(detectedEmotion, happyFaceImage, isHappy);
+        // Show choice dialog with the local images
+        _showNavigationChoiceDialog('sad', happyPersonImage, false);
       } else {
-        _showErrorDialog('Failed to analyze emotion: ${response.statusCode}');
+        // Use backend API on web/desktop
+        String base64Image = base64Encode(_capturedImage!);
+
+        final response = await http.post(
+          Uri.parse(ApiConfig.emotionPredictWithHappyFace),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'image': base64Image}),
+        );
+
+        _animationController.stop();
+        setState(() => _isScanning = false);
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final String detectedEmotion = data['emotion_label'] ?? 'neutral';
+          final String? happyFaceBase64 = data['happy_face_image'];
+          final bool isHappy = data['is_happy'] ?? false;
+
+          Uint8List? happyFaceImage;
+          if (happyFaceBase64 != null) {
+            happyFaceImage = base64Decode(happyFaceBase64);
+          }
+
+          _showNavigationChoiceDialog(detectedEmotion, happyFaceImage, isHappy);
+        } else {
+          _showErrorDialog('Failed to analyze emotion: ${response.statusCode}');
+        }
       }
     } catch (e) {
       _animationController.stop();
       setState(() => _isScanning = false);
-      _showErrorDialog('Error connecting to server: $e');
+      _showErrorDialog('Error: $e');
     }
   }
 
@@ -362,7 +471,7 @@ class _ScanScreenState extends State<ScanScreen>
                                     ],
                                   )
                                 : InkWell(
-                                    onTap: _openCamera,
+                                    onTap: _showImageSourceDialog,
                                     borderRadius: BorderRadius.circular(35),
                                     child: Column(
                                       mainAxisAlignment:
