@@ -112,136 +112,134 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-                // Scan My Face Card
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+            // Scan My Face Card
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                  child: Column(
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          _buildEmojiStack(),
-                          const SizedBox(width: 15),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'මුහුණ ස්කෑන් කරන්න',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  'ඔබේ හැඟීම්වලට ගැළපෙන ගීත',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
+                      _buildEmojiStack(),
+                      const SizedBox(width: 15),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'මුහුණ ස්කෑන් කරන්න',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 25),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 58,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4EAA57),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
+                            Text(
+                              'ඔබේ හැඟීම්වලට ගැළපෙන ගීත',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
                             ),
-                            elevation: 0,
-                          ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ScanScreen(),
-                            ),
-                          ),
-                          icon: const Icon(
-                            Icons.face_retouching_natural,
-                            size: 24,
-                          ),
-                          label: const Text(
-                            'පරීක්ෂා කරමු',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 30),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoCard(
-                        'සන්සුන් සංගීතය',
-                        'විවේකය සඳහා',
-                        Icons.spa,
-                        const Color(0xFFE8F5E9),
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4EAA57),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ScanScreen(),
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.face_retouching_natural,
+                        size: 24,
+                      ),
+                      label: const Text(
+                        'පරීක්ෂා කරමු',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: _buildInfoCard(
-                        'සතුටු මනස',
-                        'සතුටින් සිටීමට',
-                        Icons.sentiment_very_satisfied,
-                        const Color(0xFFFFF3E0),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+            ),
 
-                const SizedBox(height: 35),
+            const SizedBox(height: 30),
 
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "නැතිනම් ඔබේ හැඟීම තෝරන්න",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInfoCard(
+                    'සන්සුන් සංගීතය',
+                    'විවේකය සඳහා',
+                    Icons.spa,
+                    const Color(0xFFE8F5E9),
                   ),
                 ),
-                const SizedBox(height: 18),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildMoodChip('සතුටුයි', '😊'),
-                    _buildMoodChip('කණගාටුයි', '😟'),
-                    _buildMoodChip('සන්සුන්', '😌'),
-                    _buildMoodChip('බියයි', '😰'),
-                    _buildMoodChip('තරහයි', '😡'),
-                    _buildMoodChip('සාමාන්‍යයි', '😐'),
-                  ],
+                const SizedBox(width: 15),
+                Expanded(
+                  child: _buildInfoCard(
+                    'සතුටු මනස',
+                    'සතුටින් සිටීමට',
+                    Icons.sentiment_very_satisfied,
+                    const Color(0xFFFFF3E0),
+                  ),
                 ),
-                const SizedBox(height: 50),
               ],
             ),
-          ),
-        ],
+
+            const SizedBox(height: 35),
+
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "නැතිනම් ඔබේ හැඟීම තෝරන්න",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildMoodChip('සතුටුයි', '😊'),
+                _buildMoodChip('කණගාටුයි', '😟'),
+                _buildMoodChip('සන්සුන්', '😌'),
+                _buildMoodChip('බියයි', '😰'),
+                _buildMoodChip('තරහයි', '😡'),
+                _buildMoodChip('සාමාන්‍යයි', '😐'),
+              ],
+            ),
+            const SizedBox(height: 50),
+          ],
+        ),
       ),
     );
   }
