@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
+import 'mood_home.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
@@ -81,41 +81,87 @@ class OnboardingScreen3 extends StatelessWidget {
                                 const SizedBox(width: 8),
                                 _buildIndicator(false),
                                 const SizedBox(width: 8),
-                                _buildIndicator(true),
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
                               ],
                             ),
-
-                            const Spacer(),
-
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 40.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // Back button
-                                  _buildNavButton(
-                                    icon: Icons.arrow_back,
-                                    onPressed: () => Navigator.pop(context),
-                                  ),
-                                  // Next button (Now matches Screen 1 and 2)
-                                  _buildNavButton(
-                                    icon: Icons.arrow_forward,
-                                    onPressed: () {
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const MyHomePage(
-                                                title: 'MoodTunes',
-                                              ),
+                            const SizedBox(height: 20),
+                            // Navigation buttons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Back button
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 16.0),
+                                  child: Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
                                         ),
-                                        (route) => false,
-                                      );
-                                    },
+                                      ],
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.arrow_back,
+                                        color: Colors.green,
+                                        size: 28,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                    ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                // Finish button
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 16.0),
+                                  child: Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.check,
+                                        color: Colors.green,
+                                        size: 28,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const MoodHome(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

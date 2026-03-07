@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'scan_screen.dart';
+import 'scan_screen.dart'; // Import the ScanScreen
+import 'onboarding_screen_1.dart'; //  ADD: Import onboarding screen
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,54 +19,98 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Stack(
-        children: [
-          // --- පසුබිම් මෝස්තර (Empty space පිරවීම සඳහා විශාල කර ඇත) ---
-          Positioned(
-            top: 120,
-            left: -80,
-            child: Image.asset(
-              'assets/images/Ellipse1.png',
-              width: 280,
-              height: 280,
-              opacity: const AlwaysStoppedAnimation(0.4),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            const Text(
+              'How are you feeling today?',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1C22),
+              ),
             ),
-          ),
-
-          Positioned(
-            bottom: -50, // Footer එක දක්වා හිස් ඉඩ පිරවීමට
-            right: -90,
-            child: Image.asset(
-              'assets/images/Ellipse2.png',
-              width: 380,
-              height: 380,
-              opacity: const AlwaysStoppedAnimation(0.5),
+            const SizedBox(height: 8),
+            const Text(
+              "Let's find the perfect music for your mood",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-          ),
+            const SizedBox(height: 30),
 
-          // --- ප්‍රධාන අන්තර්ගතය ---
-          SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 30),
-                const Text(
-                  'අද ඔබට කොහොමද?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1C22),
+            // ✅ NEW: Mood Checker (Voice) Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Color(0xFF22C55E),
+                        child: Icon(Icons.mic, color: Colors.white),
+                      ),
+                      const SizedBox(width: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Check My Mood (Voice)',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            'Answer questions & detect mood',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "ඔබේ මනෝභාවයට ගැළපෙනම සංගීතය තෝරා ගනිමු",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-                const SizedBox(height: 35),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF22C55E),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const OnboardingScreen1(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.play_arrow, size: 20),
+                      label: const Text(
+                        'Start Mood Check',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
                 // Scan My Face Card
                 Container(

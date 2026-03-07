@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'main_navigation.dart';
+import 'parent_login_screen.dart';
+import 'parent_register_screen.dart';
+import 'child_login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -8,126 +10,154 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // --- පසුබිම් මෝස්තර (Background Ellipses) ---
-
-          // ඉහළ දකුණු පස Ellipse
-          Positioned(
-            top: -50,
-            right: -50,
-            child: Image.asset(
-              'assets/images/Ellipse1.png',
-              width: 200,
-              height: 200,
-              fit: BoxFit.contain,
-            ),
-          ),
-
-          // පහළ වම් පස Ellipse
-          Positioned(
-            bottom: -80,
-            left: -80,
-            child: Image.asset(
-              'assets/images/Ellipse2.png',
-              width: 250,
-              height: 250,
-              fit: BoxFit.contain,
-            ),
-          ),
-
-          // --- ප්‍රධාන අන්තර්ගතය (Main Content) ---
-          SafeArea(
-            child: Center(
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
-
-                  // Logo එක (StartScreen එකට සමාන ප්‍රමාණය)
-                  SizedBox(
-                    width: 300,
-                    height: 300,
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                    ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // Logo/Icon
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E),
+                    borderRadius: BorderRadius.circular(30),
                   ),
-
-                  const Spacer(flex: 1),
-
-                  // සිංහල භාෂාවෙන් අකුරු පෙළ
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'සුව මනස වෙත සාදරයෙන් පිළිගනිමු!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 28, // ටිකක් විශාල අකුරු
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          'ඔබේ මනෝභාවයට ගැළපෙන සහනයක් සහ සතුටක් සොයා ගන්න.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black54,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: const Icon(
+                    Icons.emoji_emotions,
+                    size: 70,
+                    color: Colors.white,
                   ),
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'සුව මනස',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF22C55E),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Suwa Manasa',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Student Mental Health Assessment',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
 
-                  const Spacer(flex: 1),
-
-                  // ආරම්භ කිරීමේ බොත්තම (Get Started Button)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MainNavigation(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(
-                            0xFF4EAA57,
-                          ), // තේමා වර්ණය (කොළ)
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 0,
+                // Parent Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ParentLoginScreen(),
                         ),
-                        child: const Text(
-                          'ආරම්භ කරමු',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.family_restroom),
+                    label: const Text(
+                      'Parent Login',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
 
-                  const SizedBox(height: 40),
-                ],
-              ),
+                // Register as Parent Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ParentRegisterScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.person_add),
+                    label: const Text(
+                      'Register as Parent',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF22C55E),
+                      side: const BorderSide(
+                        color: Color(0xFF22C55E),
+                        width: 2,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Student Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChildLoginScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.school),
+                    label: const Text(
+                      'Student Login',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
