@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/api_service.dart';
-import '../models/story_model.dart';
-import '../models/mood_model.dart';
+import '../../services/story/api_service.dart';
+import '../../models/story/story_model.dart';
+import '../../models/story/mood_model.dart';
 
 class StoryDisplayScreen extends StatefulWidget {
   final Story story;

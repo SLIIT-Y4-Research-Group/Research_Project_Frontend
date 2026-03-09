@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Screens
-import 'screens/home_screen.dart';
-import 'screens/mood_input_screen.dart';
-import 'screens/history_screen.dart';
-import 'screens/story_display_screen.dart';
-import 'screens/story_generation_screen.dart';
+import 'screens/story/home_screen.dart';
+import 'screens/story/mood_input_screen.dart';
+import 'screens/story/history_screen.dart';
+import 'screens/story/story_display_screen.dart';
+import 'screens/story/story_generation_screen.dart';
 // Services
-import 'services/api_service.dart';
-import 'services/ai_story_service.dart';
+import 'services/story/api_service.dart';
+import 'services/story/ai_story_service.dart';
 
 // Theme
-import 'core/theme.dart';
+import 'core/story/theme.dart';
 
-import 'models/story_model.dart';
+import 'models/story/story_model.dart';
 
 void main() {
   runApp(
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
       home: HomeScreen(),
       // In main.dart, update the '/mood-input' route:
       routes: {
-        '/home': (context) => HomeScreen(),
+        '/story-home': (context) => HomeScreen(),
         '/mood-input': (context) => MoodInputScreen(
   onGenerateStory: (moodProfile) async {
     final aiService = Provider.of<AIStoryService>(context, listen: false);

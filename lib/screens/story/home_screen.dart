@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/api_service.dart';
-import '../services/ai_story_service.dart';
+import '../../services/story/api_service.dart';
+import '../../services/story/ai_story_service.dart';
 import 'mood_input_screen.dart';
 import 'history_screen.dart';
 import 'story_display_screen.dart';
-import '../models/mood_model.dart';
+import '../../models/story/mood_model.dart';
 import 'story_generation_screen.dart';
 
 class HomeScreen extends StatefulWidget {

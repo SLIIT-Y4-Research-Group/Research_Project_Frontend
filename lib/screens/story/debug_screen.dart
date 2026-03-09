@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/ai_story_service.dart';
-import '../services/api_service.dart';
-import '../core/config.dart';
+import '../../services/story/ai_story_service.dart';
+import '../../services/story/api_service.dart';
+import '../../core/story/config.dart';
 
 class DebugScreen extends StatefulWidget {
   const DebugScreen({Key? key}) : super(key: key);

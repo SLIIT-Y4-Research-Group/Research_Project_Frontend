@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/mood_model.dart';
-import '../services/ai_story_service.dart';
+import '../../models/story/mood_model.dart';
+import '../../services/story/ai_story_service.dart';
 import 'story_display_screen.dart';
-import '../models/story_model.dart';
+import '../../models/story/story_model.dart';
 
 class SimpleGenerationScreen extends StatefulWidget {
   final MoodProfile moodProfile;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/mood_model.dart';
-import '../widgets/mood_wheel.dart';
-import '../widgets/weather_picker.dart';
-import '../widgets/character_picker.dart';
-import '../core/story_constants.dart';
+import '../../models/story/mood_model.dart';
+import '../../widgets/story/mood_wheel.dart';
+import '../../widgets/story/weather_picker.dart';
+import '../../widgets/story/character_picker.dart';
+import '../../core/story/story_constants.dart';
 
 class MoodInputScreen extends StatefulWidget {
   final Future<void> Function(MoodProfile) onGenerateStory;

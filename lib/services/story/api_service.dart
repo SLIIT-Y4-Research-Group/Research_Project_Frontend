@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/config.dart';
-import '../models/api_response.dart';
-import '../models/story_model.dart';
-import '../models/mood_model.dart';
+import '../../core/story/config.dart';
+import '../../models/story/api_response.dart';
+import '../../models/story/story_model.dart';
+import '../../models/story/mood_model.dart';
 
 
 class ApiService {

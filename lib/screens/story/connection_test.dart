@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../services/ai_story_service.dart';
+import '../../services/story/api_service.dart';
+import '../../services/story/ai_story_service.dart';
 
 class ConnectionTestScreen extends StatefulWidget {
   @override

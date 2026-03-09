@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/mood_model.dart';
+import '../../models/story/mood_model.dart';
 
 class MoodWheelWidget extends StatefulWidget {
   final Function(String) onMoodSelected;

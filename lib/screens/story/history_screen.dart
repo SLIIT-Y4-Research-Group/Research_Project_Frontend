@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/api_service.dart';
-import '../models/story_model.dart';
+import '../../services/story/api_service.dart';
+import '../../models/story/story_model.dart';
 import 'story_display_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
