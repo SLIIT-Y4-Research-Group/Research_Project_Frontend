@@ -103,19 +103,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('StoryGen AI'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.history),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => HistoryScreen()),
-              );
-            },
-          ),
-        ],
+  centerTitle: false,
+  title: Row(
+    children: [
+      CircleAvatar(
+        radius: 22, // adjust size
+        backgroundColor: Colors.transparent,
+        backgroundImage: AssetImage('images/logo.png'),
       ),
+      SizedBox(width: 10),
+      Text(
+        'සුව මනස',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  ),
+),
+
+
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -124,48 +132,48 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Server status card
-                  Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                _serverConnected ? Icons.check_circle : Icons.error,
-                                color: _serverConnected ? Colors.green : Colors.red,
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                _serverConnected ? 'Backend Connected' : 'Backend Unavailable',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          // Row(
-                          //   children: [
-                          //     Icon(
-                          //       _aiAvailable ? Icons.psychology : Icons.psychology_outlined,
-                          //       color: _aiAvailable ? Colors.blue : Colors.grey,
-                          //     ),
-                          //     SizedBox(width: 10),
-                          //     Text(
-                          //       _aiAvailable ? 'AI Model Ready' : 'AI Model Unavailable',
-                          //       style: TextStyle(
-                          //         fontSize: 14,
-                          //         color: _aiAvailable ? Colors.blue : Colors.grey,
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Card(
+                  //   child: Padding(
+                  //     padding: EdgeInsets.all(16),
+                  //     child: Column(
+                  //       children: [
+                  //         Row(
+                  //           children: [
+                  //             Icon(
+                  //               _serverConnected ? Icons.check_circle : Icons.error,
+                  //               color: _serverConnected ? Colors.green : Colors.red,
+                  //             ),
+                  //             SizedBox(width: 10),
+                  //             Text(
+                  //               _serverConnected ? 'Backend Connected' : 'Backend Unavailable',
+                  //               style: TextStyle(
+                  //                 fontWeight: FontWeight.bold,
+                  //                 fontSize: 16,
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //         SizedBox(height: 10),
+                  //         // Row(
+                  //         //   children: [
+                  //         //     Icon(
+                  //         //       _aiAvailable ? Icons.psychology : Icons.psychology_outlined,
+                  //         //       color: _aiAvailable ? Colors.blue : Colors.grey,
+                  //         //     ),
+                  //         //     SizedBox(width: 10),
+                  //         //     Text(
+                  //         //       _aiAvailable ? 'AI Model Ready' : 'AI Model Unavailable',
+                  //         //       style: TextStyle(
+                  //         //         fontSize: 14,
+                  //         //         color: _aiAvailable ? Colors.blue : Colors.grey,
+                  //         //       ),
+                  //         //     ),
+                  //         //   ],
+                  //         // ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   
                   SizedBox(height: 30),
                   
@@ -175,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(
                         Icons.auto_stories,
                         size: 100,
-                        color: Colors.deepPurple,
+                        color: Color.fromRGBO(113, 212, 131, 1.0),
                       ),
                       SizedBox(height: 20),
                       Text(
@@ -183,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple[800],
+                          color: Color.fromRGBO(113, 212, 131, 1.0),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -208,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: _navigateToMoodInput,
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.symmetric(vertical: 18),
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Color.fromRGBO(113, 212, 131, 1.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -280,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         margin: EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Colors.deepPurple[100],
+                            backgroundColor: Color.fromRGBO(113, 212, 131, 1.0),
                             child: Text('📖'),
                           ),
                           title: Text(
@@ -355,7 +363,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 24, color: Colors.deepPurple),
+            child: Icon(icon, size: 24, color: const Color.fromARGB(255, 71, 223, 119)),
           ),
           SizedBox(height: 8),
           Text(

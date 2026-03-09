@@ -8,7 +8,7 @@ class AppTheme {
     scaffoldBackgroundColor: Colors.grey[50],
     fontFamily: 'Sinhala',
     appBarTheme: AppBarTheme(
-      backgroundColor: Colors.deepPurple[300],
+      backgroundColor: Color.fromRGBO(113, 212, 131, 1.0),
       elevation: 0,
       titleTextStyle: TextStyle(
         color: Colors.white,
@@ -47,7 +47,7 @@ class AppTheme {
       margin: EdgeInsets.all(8),
     ),
     colorScheme: ColorScheme.light(
-      primary: Colors.deepPurple,
+      primary: Color.fromRGBO(113, 212, 131, 1.0),
       secondary: Colors.amber,
       background: Colors.grey[50]!,
     ),

@@ -5,6 +5,8 @@ class MoodProfile {
   final String weather;
   final String character;
   final String? starterSentence;
+  final String storyLength; // 'short', 'medium', 'long'
+  final bool useGemini; // Option to use Gemini or local model
   final DateTime timestamp;
 
   MoodProfile({
@@ -12,6 +14,8 @@ class MoodProfile {
     required this.weather,
     required this.character,
     this.starterSentence,
+    this.storyLength = 'medium', // Default to medium
+    this.useGemini = true, // Default to using Gemini if available
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
@@ -22,6 +26,8 @@ class MoodProfile {
       'weather': weather,
       'character': character,
       'starter_sentence': starterSentence,
+      'story_length': storyLength,
+      'use_gemini': useGemini,
       'timestamp': timestamp.toIso8601String(),
     };
   }
@@ -33,6 +39,8 @@ class MoodProfile {
       weather: json['weather'],
       character: json['character'],
       starterSentence: json['starter_sentence'],
+      storyLength: json['story_length'] ?? 'medium',
+      useGemini: json['use_gemini'] ?? true,
       timestamp: DateTime.parse(json['timestamp']),
     );
   }
@@ -41,6 +49,7 @@ class MoodProfile {
   String get moodSinhala => _getSinhalaMood(mood);
   String get weatherSinhala => _getSinhalaWeather(weather);
   String get characterSinhala => _getSinhalaCharacter(character);
+  String get storyLengthSinhala => _getSinhalaStoryLength(storyLength);
 
   String _getSinhalaMood(String englishMood) {
     const translations = {
@@ -73,6 +82,15 @@ class MoodProfile {
       'elephant': 'අලියා',
     };
     return translations[englishCharacter] ?? englishCharacter;
+  }
+
+  String _getSinhalaStoryLength(String length) {
+    const translations = {
+      'short': 'කෙටි',
+      'medium': 'මධ්‍යම',
+      'long': 'දිගු',
+    };
+    return translations[length] ?? length;
   }
 
   Color get moodColor {
