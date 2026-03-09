@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import 'welcome_screen.dart';
+import 'parent_drawings_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({super.key});
@@ -1075,6 +1076,17 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ParentDrawingsScreen(),
+      ),
+    );
+  },
+  child: const Text('View Child Drawings'),
+),
                       ElevatedButton.icon(
                         onPressed: () => _showInviteTrustedDialog(_selectedChildId!),
                         icon: const Icon(Icons.person_add, size: 18),

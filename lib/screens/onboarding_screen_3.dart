@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_first_app/screens/main_home_screen.dart';
-import '../screens/main_home_screen.dart';
-
-import 'mood_home.dart';
+import 'welcome_screen.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
@@ -13,7 +11,6 @@ class OnboardingScreen3 extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Green background at bottom
           Positioned(
             bottom: 0,
             left: 0,
@@ -25,7 +22,6 @@ class OnboardingScreen3 extends StatelessWidget {
             ),
           ),
 
-          // Main content
           SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -34,7 +30,6 @@ class OnboardingScreen3 extends StatelessWidget {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
-                    // Top section with logo
                     Expanded(
                       flex: 5,
                       child: Center(
@@ -55,7 +50,6 @@ class OnboardingScreen3 extends StatelessWidget {
                       ),
                     ),
 
-                    // Bottom section with text on green background
                     Expanded(
                       flex: 5,
                       child: Padding(
@@ -89,7 +83,6 @@ class OnboardingScreen3 extends StatelessWidget {
 
                             const SizedBox(height: 30),
 
-                            // Page indicators
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -97,7 +90,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                   width: 12,
                                   height: 12,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Colors.white.withValues(alpha: 0.5),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -106,7 +99,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                   width: 12,
                                   height: 12,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Colors.white.withValues(alpha: 0.5),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -124,11 +117,9 @@ class OnboardingScreen3 extends StatelessWidget {
 
                             const SizedBox(height: 20),
 
-                            // Navigation buttons
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Back button
                                 Padding(
                                   padding: const EdgeInsets.only(left: 16.0),
                                   child: Container(
@@ -139,7 +130,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Colors.black.withValues(alpha: 0.1),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -152,13 +143,18 @@ class OnboardingScreen3 extends StatelessWidget {
                                         size: 28,
                                       ),
                                       onPressed: () {
-                                        Navigator.pop(context);
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const WelcomeScreen(),
+                                          ),
+                                        );
                                       },
                                     ),
                                   ),
                                 ),
 
-                                // Finish button
                                 Padding(
                                   padding: const EdgeInsets.only(right: 16.0),
                                   child: Container(
@@ -169,30 +165,28 @@ class OnboardingScreen3 extends StatelessWidget {
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Colors.black.withValues(alpha: 0.1),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
                                       ],
                                     ),
                                     child: IconButton(
-                                      icon: const Icon(
-                                        Icons.check,
-                                        color: Colors.green,
-                                        size: 28,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const MainHomeScreen(),
-
-                                          ),
-                                          (route) => false,
-                                        );
-                                      },
-                                    ),
+  icon: const Icon(
+    Icons.check,
+    color: Colors.green,
+    size: 28,
+  ),
+  onPressed: () {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const WelcomeScreen(),
+      ),
+      (route) => false,
+    );
+  },
+),
                                   ),
                                 ),
                               ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class ArtTherapyStep2Screen extends StatefulWidget {
   const ArtTherapyStep2Screen({super.key});
@@ -13,16 +14,26 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
   Timer? _timer;
   int _secondsLeft = 10;
   bool _navigated = false;
+  bool _isLoading = false;
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
     _startTimer();
+    _playInstructionAudio();
+  }
+
+  Future<void> _playInstructionAudio() async {
+    await _audioPlayer.play(
+      AssetSource('audio/art02.mp3'),
+    );
   }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) return;
+      if (!mounted || _isLoading) return;
 
       setState(() => _secondsLeft--);
 
@@ -32,16 +43,28 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
     });
   }
 
-  void _goNext() {
+  Future<void> _goNext() async {
     if (_navigated || !mounted) return;
     _navigated = true;
     _timer?.cancel();
+
+    await _audioPlayer.stop();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
     Navigator.pushReplacementNamed(context, '/art_theraphy_screen_03');
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -55,53 +78,44 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
       ),
       body: Stack(
         children: [
-
-          // Background
           Positioned.fill(
             child: Image.asset(
-              'assets/images/step2.jpg',
+              'assets/images/fantasygreen.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Column(
                 children: [
                   const SizedBox(height: 10),
-
                   const Text(
-                    "අද දවස ඔබට කොහොමද?\n"
-                    "දෙමාපියන් හා යහළුවන් සමඟ සිදු වූ දේවල් මතක් කරගෙන ඒවා සිතුවිලිවලට නගන්න",
+                    "දැන් ඔබේ සිත නිදහස් කරමින්, ඔබ අත්විඳින හැඟීම් සන්සුන්ව අවධානයට ගන්න.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-
                   const SizedBox(height: 24),
-
                   Expanded(
                     child: Lottie.asset(
-                      'assets/animations/stress.json',
+                      'assets/animations/meditation.json',
                       fit: BoxFit.contain,
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   Text(
                     "ඊළඟ පියවරට තත්පර $_secondsLeft කින්",
                     style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
-
                   const SizedBox(height: 16),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -117,7 +131,9 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
                       child: const Text(
                         "ඊළඟ පියවර",
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -125,6 +141,17 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
               ),
             ),
           ),
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.35),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF4EAA57),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

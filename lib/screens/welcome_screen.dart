@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
-import 'balloon_breath_page.dart';
-import 'bubble_pop_page.dart';
-import 'onboarding_lottie_screen.dart';
 import 'parent_login_screen.dart';
 import 'parent_register_screen.dart';
 import 'child_login_screen.dart';
@@ -21,7 +17,6 @@ class WelcomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // Logo/Icon
                 Container(
                   width: 120,
                   height: 120,
@@ -67,7 +62,6 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 48),
 
-                // Parent Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -99,7 +93,6 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Register as Parent Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -134,7 +127,6 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Student Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -171,75 +163,6 @@ class WelcomeScreen extends StatelessWidget {
                   'Discover music tailored to your mood.',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                   textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-
-                // Get Started button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text('Get Started'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Breathing Exercise button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BalloonBreathPage(),
-                        ),
-                      );
-                    },
-                    child: const Text('Breathing Exercise'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Bubble Pop Game button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BubblePopPage(),
-                        ),
-                      );
-                    },
-                    child: const Text('Bubble Pop Game'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Onboarding Lottie Screen button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const OnboardingLottieScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text('Art Therapy Intro'),
-                  ),
                 ),
               ],
             ),
