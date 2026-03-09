@@ -40,11 +40,11 @@ class StartScreen extends StatelessWidget {
                 children: [
                   const Spacer(flex: 2),
                   // Logo with circular background
-                  Container(
+                  SizedBox(
                     width: 350,
                     height: 350,
                     child: Image.asset(
-                      'assets/images/logo.png',
+                      'assets/images/anim_logo.gif',
                       fit: BoxFit.contain,
                     ),
                   ),

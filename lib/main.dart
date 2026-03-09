@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'screens/start_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,8 +17,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF22C55E)),
         useMaterial3: true,
+        textTheme: GoogleFonts.notoSansSinhalaTextTheme(
+          Theme.of(context).textTheme,
+        ),
       ),
-      home: const WelcomeScreen(),
+      home: const StartScreen(),
     );
   }
 }

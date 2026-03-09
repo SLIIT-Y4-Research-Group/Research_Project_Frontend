@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'parent_login_screen.dart';
 import 'parent_register_screen.dart';
 import 'child_login_screen.dart';
@@ -32,9 +33,9 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                const Text(
+                Text(
                   'සුව මනස',
-                  style: TextStyle(
+                  style: GoogleFonts.notoSansSinhala(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF22C55E),
@@ -56,7 +57,7 @@ class WelcomeScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Parent Login Button
                 SizedBox(
                   width: double.infinity,
@@ -88,7 +89,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Register as Parent Button
                 SizedBox(
                   width: double.infinity,
@@ -123,7 +124,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Student Login Button
                 SizedBox(
                   width: double.infinity,
