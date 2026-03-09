@@ -74,7 +74,7 @@ class OnboardingScreen1 extends StatelessWidget {
                                 children: [
                                   const SizedBox(height: 20),
                                   const Text(
-                                    'ළමා සිතට ආදරයෙන් සමීප වෙමු',
+                                    'ඔබ සාදරයෙන් පිළිගනිමු! ',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 26,

@@ -47,7 +47,7 @@ class OnboardingScreen3 extends StatelessWidget {
                       width: 200,
                       height: 200,
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/anim_logo.gif',
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -74,7 +74,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                 children: [
                                   const SizedBox(height: 20),
                                   const Text(
-                                    'දිනපතා කුඩා සුවපත් පියවර',
+                                    'සිත සුරකිමු, සතුට වර්ධනය කරමු',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 26,
@@ -84,7 +84,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 15),
                                   const Text(
-                                    'à¶”à¶¶à·š à¶œà¶¸à¶± à¶†à¶»à¶¸à·Šà¶· à¶šà·’à¶»à·“à¶¸à¶§\nà·ƒà·–à¶¯à·à¶±à¶¸à·Šà¶¯?\nà¶…à¶´à·’ à¶”à¶¶ à·ƒà¶¸à¶Ÿ à·ƒà·’à¶§à·’à¶¸à·!',
+                                    'දරුවන්ගේ මානසික සුවතාවය සුරක්ෂිතව සහ ආදරයෙන් නංවාලීමට නිර්මාණය කළ smart companion එකක්.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 16,
@@ -133,20 +133,19 @@ class OnboardingScreen3 extends StatelessWidget {
                                             },
                                           ),
                                         ),
-                                        // Finish button
+                                        // Next button
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             right: 16.0,
                                           ),
                                           child: _buildNavButton(
-                                            icon: Icons.check,
+                                            icon: Icons.arrow_forward,
                                             onPressed: () {
-                                              Navigator.pushAndRemoveUntil(
+                                              Navigator.push(
                                                 context,
                                                 _fadeRoute(
                                                   const WelcomeScreen(),
                                                 ),
-                                                (route) => false,
                                               );
                                             },
                                           ),

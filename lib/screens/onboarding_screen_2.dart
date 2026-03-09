@@ -47,7 +47,7 @@ class OnboardingScreen2 extends StatelessWidget {
                       width: 200,
                       height: 200,
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/anim_logo.gif',
                         fit: BoxFit.contain,
                       ),
                     ),
