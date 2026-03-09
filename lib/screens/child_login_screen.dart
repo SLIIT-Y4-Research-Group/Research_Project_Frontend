@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
+import 'onboarding_screen_1.dart';
 
 class ChildLoginScreen extends StatefulWidget {
   const ChildLoginScreen({super.key});
@@ -50,7 +50,7 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(builder: (context) => const OnboardingScreen1()),
           );
         }
       } else {

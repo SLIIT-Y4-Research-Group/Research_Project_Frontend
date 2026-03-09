@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'music_player_screen.dart';
 
 class MusicRecommendationScreen extends StatefulWidget {
@@ -13,6 +16,37 @@ class MusicRecommendationScreen extends StatefulWidget {
 
 class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
   int? _hoveredIndex;
+  late Future<List<Map<String, dynamic>>> _tracksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _tracksFuture = _fetchTracks(widget.emotion);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchTracks(String emotion) async {
+    final uri = Uri.parse(
+      '${ApiConfig.BASE_URL}/music/tracks?emotion=${Uri.encodeComponent(emotion)}',
+    );
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load tracks');
+    }
+    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    return data.map((item) {
+      final map = item as Map<String, dynamic>;
+      return {
+        'id': map['id'],
+        'title': map['title'] ?? 'Unknown Title',
+        'subtitle': map['artist'] ?? 'Unknown Artist',
+        'audio_url': map['audio_url'],
+        'cover_url': map['cover_url'],
+        'duration': '3:00',
+        'colors': _colorsForEmotion(emotion),
+        'isFavorite': false,
+      };
+    }).toList();
+  }
 
   // Emotion label mapping for Sinhala
   String _getSinhalaEmotion(String emotion) {
@@ -32,9 +66,25 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
     }
   }
 
+  List<Color> _colorsForEmotion(String emotion) {
+    switch (emotion.toLowerCase()) {
+      case 'happy':
+        return [Colors.orange.shade300, Colors.yellow.shade300];
+      case 'sad':
+        return [Colors.blue.shade300, Colors.indigo.shade300];
+      case 'anxious':
+        return [Colors.purple.shade300, Colors.blueGrey.shade300];
+      case 'calm':
+        return [Colors.teal.shade300, Colors.green.shade300];
+      case 'angry':
+        return [Colors.red.shade300, Colors.deepOrange.shade300];
+      default:
+        return [Colors.green.shade300, Colors.teal.shade300];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final songs = _getSongsForEmotion(widget.emotion);
     final sinhalaEmotion = _getSinhalaEmotion(widget.emotion);
 
     return Scaffold(
@@ -100,12 +150,34 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
               ),
               const SizedBox(height: 10),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  itemCount: songs.length,
-                  itemBuilder: (context, index) {
-                    final song = songs[index];
-                    return _buildSongTile(song, index, songs);
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _tracksFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Failed to load tracks',
+                          style: TextStyle(color: Colors.red.shade300),
+                        ),
+                      );
+                    }
+                    final songs = snapshot.data ?? [];
+                    if (songs.isEmpty) {
+                      return const Center(
+                        child: Text('No tracks found for this emotion'),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      itemCount: songs.length,
+                      itemBuilder: (context, index) {
+                        final song = songs[index];
+                        return _buildSongTile(song, index, songs);
+                      },
+                    );
                   },
                 ),
               ),
@@ -148,10 +220,25 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
               end: Alignment.bottomRight,
             ),
           ),
-          child: const Icon(
-            Icons.play_arrow_rounded,
-            color: Colors.white,
-            size: 35,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: song['cover_url'] != null
+                ? Image.network(
+                    song['cover_url'] as String,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 35,
+                      );
+                    },
+                  )
+                : const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 35,
+                  ),
           ),
         ),
         title: Text(
@@ -199,86 +286,5 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
         ),
       ),
     );
-  }
-
-  List<Map<String, dynamic>> _getSongsForEmotion(String emotion) {
-    // තෝරාගත් මනෝභාවය අනුව ගීත ලැයිස්තුව
-    switch (emotion.toLowerCase()) {
-      case 'anxious':
-        return [
-          {
-            'title': 'සන්සුන් හුස්ම',
-            'subtitle': 'Calm Mind',
-            'duration': '6:00',
-            'colors': [Colors.orange.shade300, Colors.pink.shade200],
-            'isFavorite': false,
-          },
-          {
-            'title': 'නිදහස් සිත',
-            'subtitle': 'Relief',
-            'duration': '5:30',
-            'colors': [Colors.green.shade300, Colors.blue.shade300],
-            'isFavorite': true,
-          },
-          {
-            'title': 'සියල්ල යහපත් වේ',
-            'subtitle': 'Peace',
-            'duration': '4:00',
-            'colors': [Colors.yellow.shade400, Colors.orange.shade200],
-            'isFavorite': false,
-          },
-        ];
-      case 'happy':
-        return [
-          {
-            'title': 'සතුටු සිත',
-            'subtitle': 'Good Vibes',
-            'duration': '4:30',
-            'colors': [Colors.yellow.shade300, Colors.orange.shade300],
-            'isFavorite': true,
-          },
-          {
-            'title': 'ප්‍රීතිමත් දිනයක්',
-            'subtitle': 'Joy',
-            'duration': '3:45',
-            'colors': [Colors.pink.shade300, Colors.purple.shade300],
-            'isFavorite': false,
-          },
-        ];
-      case 'sad':
-        return [
-          {
-            'title': 'සෙනෙහස',
-            'subtitle': 'Comfort',
-            'duration': '6:30',
-            'colors': [Colors.blue.shade300, Colors.purple.shade200],
-            'isFavorite': false,
-          },
-          {
-            'title': 'ඔබ තනිවම නොවේ',
-            'subtitle': 'Support',
-            'duration': '5:15',
-            'colors': [Colors.teal.shade300, Colors.blue.shade300],
-            'isFavorite': true,
-          },
-        ];
-      default:
-        return [
-          {
-            'title': 'සාමකාමී සිත',
-            'subtitle': 'Serenity',
-            'duration': '5:00',
-            'colors': [Colors.green.shade300, Colors.teal.shade300],
-            'isFavorite': false,
-          },
-          {
-            'title': 'සමබරතාවය',
-            'subtitle': 'Balance',
-            'duration': '4:30',
-            'colors': [Colors.purple.shade300, Colors.pink.shade300],
-            'isFavorite': false,
-          },
-        ];
-    }
   }
 }
