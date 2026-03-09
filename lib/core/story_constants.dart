@@ -39,4 +39,15 @@ class StoryConstants {
     'confused': 'ව්‍යාකූල',
     'hopeful': 'බලාපොරොත්තු',
   };
+  static const Map<String, String> storyLengthSinhala = {
+    'short': 'කෙටි',
+    'medium': 'මධ්‍යම',
+    'long': 'දිගු',
+  };
+  
+  static const Map<String, String> storyLengthDescription = {
+    'short': 'වාක්‍ය 3-4',
+    'medium': 'වාක්‍ය 5-6',
+    'long': 'වාක්‍ය 7-9',
+  };
 }

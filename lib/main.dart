@@ -6,7 +6,6 @@ import 'screens/home_screen.dart';
 import 'screens/mood_input_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/story_display_screen.dart';
-import 'screens/complete_example.dart'; // Optional: for testing
 import 'screens/story_generation_screen.dart';
 // Services
 import 'services/api_service.dart';
@@ -113,7 +112,6 @@ class MyApp extends StatelessWidget {
 ),
 
         '/history': (context) => HistoryScreen(),
-        '/example': (context) => CompleteExampleScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/story') {
