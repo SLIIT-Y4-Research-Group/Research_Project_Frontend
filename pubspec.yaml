@@ -32,8 +32,14 @@ dependencies:
   flutter:
     sdk: flutter
   image_picker: ^0.8.5+3
-  http: ^1.6.0
   shared_preferences: ^2.2.2
+
+  http: ^1.2.0
+  flutter_tts: ^4.0.2
+  audioplayers: ^6.0.0
+  lottie: ^3.1.0
+  path_provider: ^2.1.4
+  share_plus: ^10.0.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -41,7 +47,6 @@ dependencies:
   flutter_svg: ^2.0.10+1
   speech_to_text: ^7.3.0
   permission_handler: ^12.0.1
-  lottie: ^3.1.0
   confetti: ^0.7.0
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
@@ -74,6 +79,9 @@ flutter:
     - assets/images/
     - assets/images/anim_logo.gif
     - assets/lottie/
+    - assets/audio/
+    - assets/animations/
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

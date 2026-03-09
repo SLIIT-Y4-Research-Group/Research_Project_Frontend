@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'welcome_screen.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
@@ -10,15 +10,14 @@ class OnboardingScreen3 extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Corner ellipses (screen 3)
           Positioned(
             top: -80,
             right: -40,
             child: Container(
               width: 170,
               height: 170,
-              decoration: BoxDecoration(
-                color: const Color(0xFF71D483),
+              decoration: const BoxDecoration(
+                color: Color(0xFF71D483),
                 shape: BoxShape.circle,
               ),
             ),
@@ -29,21 +28,20 @@ class OnboardingScreen3 extends StatelessWidget {
             child: Container(
               width: 210,
               height: 210,
-              decoration: BoxDecoration(
-                color: const Color(0xFF71D483),
+              decoration: const BoxDecoration(
+                color: Color(0xFF71D483),
                 shape: BoxShape.circle,
               ),
             ),
           ),
-          // Main content
+
           SafeArea(
             child: Column(
               children: [
-                // Top section with logo
                 Expanded(
                   flex: 6,
                   child: Center(
-                    child: Container(
+                    child: SizedBox(
                       width: 200,
                       height: 200,
                       child: Image.asset(
@@ -53,7 +51,7 @@ class OnboardingScreen3 extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Bottom section
+
                 Expanded(
                   flex: 4,
                   child: ClipRect(
@@ -93,7 +91,7 @@ class OnboardingScreen3 extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  // Page indicators
+
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -101,18 +99,12 @@ class OnboardingScreen3 extends StatelessWidget {
                                       const SizedBox(width: 8),
                                       _buildIndicator(false),
                                       const SizedBox(width: 8),
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
+                                      _buildIndicator(true),
                                     ],
                                   ),
+
                                   const SizedBox(height: 24),
-                                  // Navigation buttons
+
                                   Padding(
                                     padding: const EdgeInsets.only(
                                       bottom: 16.0,
@@ -121,7 +113,6 @@ class OnboardingScreen3 extends StatelessWidget {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        // Back button
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             left: 16.0,
@@ -133,7 +124,6 @@ class OnboardingScreen3 extends StatelessWidget {
                                             },
                                           ),
                                         ),
-                                        // Next button
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             right: 16.0,
