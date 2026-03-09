@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart';
+import 'package:my_first_app/screens/main_home_screen.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
@@ -34,7 +34,6 @@ class OnboardingScreen3 extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               children: [
@@ -51,7 +50,6 @@ class OnboardingScreen3 extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Expanded(
                   flex: 4,
                   child: ClipRect(
@@ -64,9 +62,8 @@ class OnboardingScreen3 extends StatelessWidget {
                               minHeight: constraints.maxHeight,
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32.0,
-                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 32.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -91,7 +88,6 @@ class OnboardingScreen3 extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -102,21 +98,17 @@ class OnboardingScreen3 extends StatelessWidget {
                                       _buildIndicator(true),
                                     ],
                                   ),
-
                                   const SizedBox(height: 24),
-
                                   Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 16.0,
-                                    ),
+                                    padding:
+                                        const EdgeInsets.only(bottom: 16.0),
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 16.0,
-                                          ),
+                                          padding:
+                                              const EdgeInsets.only(left: 16.0),
                                           child: _buildNavButton(
                                             icon: Icons.arrow_back,
                                             onPressed: () {
@@ -125,17 +117,18 @@ class OnboardingScreen3 extends StatelessWidget {
                                           ),
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 16.0,
-                                          ),
+                                          padding:
+                                              const EdgeInsets.only(right: 16.0),
                                           child: _buildNavButton(
                                             icon: Icons.arrow_forward,
                                             onPressed: () {
-                                              Navigator.push(
+                                              Navigator.pushAndRemoveUntil(
                                                 context,
-                                                _fadeRoute(
-                                                  const WelcomeScreen(),
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const MainHomeScreen(),
                                                 ),
+                                                (route) => false,
                                               );
                                             },
                                           ),
@@ -193,16 +186,6 @@ class OnboardingScreen3 extends StatelessWidget {
         icon: Icon(icon, color: Colors.green, size: 28),
         onPressed: onPressed,
       ),
-    );
-  }
-
-  PageRouteBuilder _fadeRoute(Widget page) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-      transitionDuration: const Duration(milliseconds: 350),
     );
   }
 }

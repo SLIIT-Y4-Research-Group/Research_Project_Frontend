@@ -14,6 +14,7 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
   Timer? _timer;
   int _secondsLeft = 10;
   bool _navigated = false;
+  bool _isLoading = false;
 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -21,7 +22,7 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
   void initState() {
     super.initState();
     _startTimer();
-    _playInstructionAudio(); // ✅ play audio when screen loads
+    _playInstructionAudio();
   }
 
   void _playInstructionAudio() async {
@@ -32,7 +33,7 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) return;
+      if (!mounted || _isLoading) return;
 
       setState(() => _secondsLeft--);
 
@@ -42,17 +43,26 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
     });
   }
 
-  void _goNext() {
+  Future<void> _goNext() async {
     if (_navigated || !mounted) return;
     _navigated = true;
     _timer?.cancel();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
     Navigator.pushReplacementNamed(context, '/art_theraphy_screen_02');
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _audioPlayer.dispose(); // ✅ release audio player
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -72,14 +82,12 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
               fit: BoxFit.cover,
             ),
           ),
-
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Column(
                 children: [
                   const SizedBox(height: 10),
-
                   const Text(
                     "කරුණාකර සන්සුන් සහ නිශ්ශබ්ද ස්ථානයක වාඩි වී හෝ සිට ගන්න",
                     textAlign: TextAlign.center,
@@ -89,18 +97,14 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
                       color: Colors.white,
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
                   Expanded(
                     child: Lottie.asset(
                       'assets/animations/meditation.json',
                       fit: BoxFit.contain,
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   Text(
                     "ඊළඟ පියවරට තත්පර $_secondsLeft කින්",
                     style: const TextStyle(
@@ -109,9 +113,7 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
                       color: Colors.white,
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -127,7 +129,9 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
                       child: const Text(
                         "ඊළඟ පියවර",
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -135,6 +139,18 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
               ),
             ),
           ),
+
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.35),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF4EAA57),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -16,6 +16,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
   int score = 0;
   int timeLeft = 30;
   bool gameRunning = false;
+  bool _isLoading = false;
 
   Timer? spawnTimer;
   Timer? moveTimer;
@@ -23,30 +24,38 @@ class _BubblePopPageState extends State<BubblePopPage> {
 
   Size screenSize = Size.zero;
 
-  // Vivid, saturated bubble colour palette
   static const List<Color> _bubbleColors = [
-    Color(0xFFFF3CAC), // hot pink
-    Color(0xFF784BA0), // purple
-    Color(0xFF2B86C5), // ocean blue
-    Color(0xFF00C9FF), // cyan
-    Color(0xFF00F2A9), // mint green
-    Color(0xFFFFD700), // golden yellow
-    Color(0xFFFF6B35), // vivid orange
-    Color(0xFFFF1744), // red
-    Color(0xFF00E5FF), // electric cyan
-    Color(0xFFAEEA00), // lime
-    Color(0xFFFF6EC7), // bubblegum pink
-    Color(0xFF651FFF), // deep violet
+    Color(0xFFFF3CAC),
+    Color(0xFF784BA0),
+    Color(0xFF2B86C5),
+    Color(0xFF00C9FF),
+    Color(0xFF00F2A9),
+    Color(0xFFFFD700),
+    Color(0xFFFF6B35),
+    Color(0xFFFF1744),
+    Color(0xFF00E5FF),
+    Color(0xFFAEEA00),
+    Color(0xFFFF6EC7),
+    Color(0xFF651FFF),
   ];
 
-  void startGame() {
-    if (gameRunning) return;
+  Future<void> startGame() async {
+    if (gameRunning || _isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
 
     setState(() {
       score = 0;
       timeLeft = 30;
       bubbles.clear();
       gameRunning = true;
+      _isLoading = false;
     });
 
     spawnTimer?.cancel();
@@ -91,16 +100,10 @@ class _BubblePopPageState extends State<BubblePopPage> {
     if (screenSize == Size.zero) return;
 
     final size = 40 + _random.nextDouble() * 60;
-
     final x = _random.nextDouble() * (screenSize.width - size);
     final y = screenSize.height + 8;
-
-    // upward speed
     final vy = 1.2 + _random.nextDouble() * 2.2;
-
-    // slanted drift: some bubbles more slanted than others
     final vx = (_random.nextDouble() * 2 - 1) * (0.3 + _random.nextDouble() * 0.9);
-
     final baseColor = _bubbleColors[_random.nextInt(_bubbleColors.length)];
 
     setState(() {
@@ -126,13 +129,9 @@ class _BubblePopPageState extends State<BubblePopPage> {
       for (final b in bubbles) {
         if (b.removed) continue;
 
-        // normal floating
         b.y -= b.vy;
-
-        // slanted drift while floating
         b.x += b.vx;
 
-        // gentle bounce on side walls
         if (b.x <= 0) {
           b.x = 0;
           b.vx = -b.vx;
@@ -141,7 +140,6 @@ class _BubblePopPageState extends State<BubblePopPage> {
           b.vx = -b.vx;
         }
 
-        // pop animation progress (if popped)
         if (b.popped) {
           b.popProgress = (b.popProgress + 0.08).clamp(0.0, 1.0);
           if (b.popProgress >= 1.0) {
@@ -150,7 +148,6 @@ class _BubblePopPageState extends State<BubblePopPage> {
         }
       }
 
-      // remove bubbles off top or finished popping
       bubbles.removeWhere((b) => b.removed || b.y < -120);
     });
   }
@@ -184,7 +181,6 @@ class _BubblePopPageState extends State<BubblePopPage> {
       ),
       body: Stack(
         children: [
-          // Background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -195,9 +191,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
             ),
           ),
 
-          // Bubbles
           ...bubbles.map((bubble) {
-            // Pop animation: expands + fades
             final double scale = bubble.popped ? (1.0 + 0.9 * bubble.popProgress) : 1.0;
             final double opacity = bubble.popped ? (1.0 - bubble.popProgress) : 1.0;
 
@@ -246,7 +240,6 @@ class _BubblePopPageState extends State<BubblePopPage> {
             );
           }),
 
-          // Score & Timer
           Positioned(
             top: 20,
             left: 20,
@@ -258,12 +251,11 @@ class _BubblePopPageState extends State<BubblePopPage> {
             child: _InfoBox("වේලාව : $timeLeft"),
           ),
 
-          // Start Button (only show if not running and not game over)
-          if (!gameRunning && timeLeft > 0)
+          if (!gameRunning && timeLeft > 0 && !_isLoading)
             Center(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromRGBO(76, 175, 80, 1),
+                  backgroundColor: const Color.fromRGBO(76, 175, 80, 1),
                   foregroundColor: Colors.white,
                 ),
                 onPressed: startGame,
@@ -271,8 +263,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
               ),
             ),
 
-          // Game Over
-          if (!gameRunning && timeLeft == 0)
+          if (!gameRunning && timeLeft == 0 && !_isLoading)
             Center(
               child: Card(
                 elevation: 5,
@@ -290,18 +281,27 @@ class _BubblePopPageState extends State<BubblePopPage> {
                       const SizedBox(height: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color.fromRGBO(76, 175, 80, 1),
+                          backgroundColor: const Color.fromRGBO(76, 175, 80, 1),
                           foregroundColor: Colors.white,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            timeLeft = 30;
-                          });
-                          startGame();
+                        onPressed: () async {
+                          await startGame();
                         },
                         child: const Text("නැවත ක්‍රීඩා කරන්න"),
                       )
                     ],
+                  ),
+                ),
+              ),
+            ),
+
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.25),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Color.fromRGBO(76, 175, 80, 1),
                   ),
                 ),
               ),
@@ -314,21 +314,15 @@ class _BubblePopPageState extends State<BubblePopPage> {
 
 class _Bubble {
   final int id;
-
   double x;
   double y;
   final double size;
-
-  // movement
-  double vx; // horizontal drift (slanted movement)
-  double vy; // upward speed
-
+  double vx;
+  double vy;
   final Color color;
   final Color borderColor;
-
-  // pop animation
   bool popped = false;
-  double popProgress = 0.0; // 0..1
+  double popProgress = 0.0;
   bool removed = false;
 
   _Bubble({
@@ -353,7 +347,7 @@ class _InfoBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(76, 175, 80, 1),
+        color: const Color.fromRGBO(76, 175, 80, 1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.black.withValues(alpha: 0.05),

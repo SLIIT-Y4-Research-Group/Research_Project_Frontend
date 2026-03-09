@@ -19,6 +19,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -40,48 +41,58 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
         _passwordController.text,
       );
 
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         final token = data['access_token'];
-        
+
         await _authService.saveToken(token, 'parent');
-        
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const ParentDashboardScreen()),
-          );
+
+        if (data['parent_id'] != null) {
+          await _authService.saveParentId(data['parent_id'].toString());
         }
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ParentDashboardScreen(),
+          ),
+        );
       } else {
-        final data = jsonDecode(response.body);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                data['detail'] ?? 'Login failed',
-                style: GoogleFonts.inter(),
-              ),
-              backgroundColor: Colors.red[600],
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Error: $e',
+              data['detail'] ?? 'Login failed',
               style: GoogleFonts.inter(),
             ),
             backgroundColor: Colors.red[600],
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error: $e',
+            style: GoogleFonts.inter(),
+          ),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -102,9 +113,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFF1F8F4), // Soft mint
-              Color(0xFFE8F5E9), // Light green
-              Color(0xFFC8E6C9), // Gentle green
+              Color(0xFFF1F8F4),
+              Color(0xFFE8F5E9),
+              Color(0xFFC8E6C9),
             ],
           ),
         ),
@@ -118,8 +129,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
-                    
-                    // Health Icon
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -127,7 +136,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -138,11 +147,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                         size: 56,
                         color: Color(0xFF43A047),
                       ),
-                    ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
-                    
+                    ).animate().fadeIn(duration: 600.ms).scale(
+                          begin: const Offset(0.8, 0.8),
+                        ),
                     const SizedBox(height: 30),
-                    
-                    // Login Card
                     Center(
                       child: Container(
                         width: cardWidth,
@@ -152,7 +160,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 24,
                               offset: const Offset(0, 8),
                             ),
@@ -163,7 +171,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Title
                               Center(
                                 child: Text(
                                   'Parent Login',
@@ -175,8 +182,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              
-                              // Subtitle
                               Center(
                                 child: Text(
                                   'Securely access your dashboard to\nmonitor your child\'s emotional wellbeing.',
@@ -189,8 +194,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                 ),
                               ),
                               const SizedBox(height: 32),
-                              
-                              // Email Field
                               TextFormField(
                                 controller: _emailController,
                                 enabled: !_isLoading,
@@ -218,7 +221,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[200]!,
+                                      width: 1,
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -250,8 +256,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                 },
                               ),
                               const SizedBox(height: 20),
-                              
-                              // Password Field
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
@@ -293,7 +297,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[200]!,
+                                      width: 1,
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -322,8 +329,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                 },
                               ),
                               const SizedBox(height: 12),
-                              
-                              // Forgot Password
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
@@ -353,8 +358,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              
-                              // Login Button
                               SizedBox(
                                 width: double.infinity,
                                 height: 54,
@@ -373,9 +376,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                       gradient: LinearGradient(
                                         colors: _isLoading
                                             ? [Colors.grey[400]!, Colors.grey[400]!]
-                                            : [
-                                                const Color(0xFF43A047),
-                                                const Color(0xFF66BB6A),
+                                            : const [
+                                                Color(0xFF43A047),
+                                                Color(0xFF66BB6A),
                                               ],
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -408,11 +411,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                   )
                                   .shimmer(
                                     duration: 2500.ms,
-                                    color: Colors.white.withOpacity(0.1),
+                                    color: Colors.white.withValues(alpha: 0.1),
                                   ),
                               const SizedBox(height: 24),
-                              
-                              // Register Link
                               Center(
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -429,7 +430,8 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => const ParentRegisterScreen(),
+                                            builder: (context) =>
+                                                const ParentRegisterScreen(),
                                           ),
                                         );
                                       },
@@ -453,7 +455,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             ],
                           ),
                         ),
-                      ).animate().fadeIn(duration: 800.ms, delay: 200.ms).slideY(begin: 0.1, end: 0),
+                      ).animate().fadeIn(duration: 800.ms, delay: 200.ms).slideY(
+                            begin: 0.1,
+                            end: 0,
+                          ),
                     ),
                   ],
                 ),
