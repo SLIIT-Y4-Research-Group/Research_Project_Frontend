@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import 'parent_drawings_screen.dart';
 import 'welcome_screen.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
@@ -15,32 +18,60 @@ class ParentDashboardScreen extends StatefulWidget {
 
 class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   final _authService = AuthService();
+
   List<Map<String, dynamic>> _children = [];
   String? _selectedChildId;
   Map<String, dynamic>? _selectedChild;
   List<Map<String, dynamic>> _trustedContacts = [];
+
   bool _isLoading = false;
   Timer? _pollingTimer;
   bool _isPolling = false;
   bool _isDarkMode = false;
 
-  // Color helpers for theme support
-  // Light mode: Refined healthcare-inspired palette with soft green tints
-  // Dark mode: Deep neutral grays with high contrast
-  Color get _pageBackground => _isDarkMode ? const Color(0xFF111827) : const Color(0xFFF6F8F7);
-  Color get _cardColor => _isDarkMode ? const Color(0xFF1F2937) : Colors.white;
-  Color get _headerColor => _isDarkMode ? const Color(0xFF1A2332) : const Color(0xFFF1F8F4);
-  Color get _primaryTextColor => _isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF1F2937);
-  Color get _secondaryTextColor => _isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
-  Color get _borderColor => _isDarkMode ? Colors.white.withOpacity(0.1) : const Color(0xFFE3EAE5);
-  Color get _emptyStateIconBg => _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF3F6F4);
-  Color get _emptyStateIconColor => _isDarkMode ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
-  Color get _selectedChildBg => _isDarkMode ? const Color(0xFF1E3A2E) : const Color(0xFFEEF7EF);
-  Color get _unselectedChildBg => _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF8FCF9);
-  Color get _fieldFillColor => _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF8FAFB);
-  Color get _dialogFieldFillColor => _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF5F7F6);
-  Color get _dividerColor => _isDarkMode ? Colors.white.withOpacity(0.08) : const Color(0xFFE8ECEA);
-  Color get _subtleSurfaceTint => _isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF8FCF9);
+  Color get _pageBackground =>
+      _isDarkMode ? const Color(0xFF111827) : const Color(0xFFF6F8F7);
+
+  Color get _cardColor =>
+      _isDarkMode ? const Color(0xFF1F2937) : Colors.white;
+
+  Color get _headerColor =>
+      _isDarkMode ? const Color(0xFF1A2332) : const Color(0xFFF1F8F4);
+
+  Color get _primaryTextColor =>
+      _isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF1F2937);
+
+  Color get _secondaryTextColor =>
+      _isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+
+  Color get _borderColor => _isDarkMode
+      ? Colors.white.withValues(alpha: 0.10)
+      : const Color(0xFFE3EAE5);
+
+  Color get _emptyStateIconBg =>
+      _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF3F6F4);
+
+  Color get _emptyStateIconColor =>
+      _isDarkMode ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF);
+
+  Color get _selectedChildBg =>
+      _isDarkMode ? const Color(0xFF1E3A2E) : const Color(0xFFEEF7EF);
+
+  Color get _unselectedChildBg =>
+      _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF8FCF9);
+
+  Color get _fieldFillColor =>
+      _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF8FAFB);
+
+  Color get _dialogFieldFillColor =>
+      _isDarkMode ? const Color(0xFF374151) : const Color(0xFFF5F7F6);
+
+  Color get _dividerColor => _isDarkMode
+      ? Colors.white.withValues(alpha: 0.08)
+      : const Color(0xFFE8ECEA);
+
+  Color get _subtleSurfaceTint =>
+      _isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF8FCF9);
 
   @override
   void initState() {
@@ -49,69 +80,80 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   }
 
   Future<void> _loadChildren() async {
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
+
     try {
       final response = await ApiClient.getChildren();
+
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+
+        if (!mounted) return;
+
+        final children = data.cast<Map<String, dynamic>>();
+
         setState(() {
-          _children = data.cast<Map<String, dynamic>>();
-          // Auto-select first child if available
+          _children = children;
+
           if (_children.isNotEmpty && _selectedChildId == null) {
-            _selectedChildId = _children[0]['id'];
+            _selectedChildId = _children[0]['id']?.toString();
             _selectedChild = _children[0];
-            _loadTrustedContacts(_selectedChildId!);
           }
         });
+
+        if (_selectedChildId != null) {
+          await _loadTrustedContacts(_selectedChildId!);
+        }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading children: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading children: $e')),
+      );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _loadTrustedContacts(String childId) async {
     try {
       final response = await ApiClient.getTrustedContacts(childId);
+
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        if (mounted) {
-          setState(() {
-            _trustedContacts = data.cast<Map<String, dynamic>>();
-          });
-        }
-        // Start polling after initial load
+
+        if (!mounted) return;
+
+        setState(() {
+          _trustedContacts = data.cast<Map<String, dynamic>>();
+        });
+
         _startTrustedContactsPolling();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading trusted contacts: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading trusted contacts: $e')),
+      );
     }
   }
 
   void _startTrustedContactsPolling() {
-    // Stop any existing polling
     _stopTrustedContactsPolling();
-    
-    // Only start polling if a child is selected
+
     if (_selectedChildId == null || !mounted) return;
-    
-    // Check if there are any pending contacts
+
     final hasPendingContacts = _trustedContacts.any(
-      (contact) => (contact['status'] ?? '').toLowerCase() == 'pending'
+      (contact) =>
+          (contact['status'] ?? '').toString().toLowerCase() == 'pending',
     );
-    
-    // If no pending contacts, don't poll (optimization)
+
     if (!hasPendingContacts && _trustedContacts.isNotEmpty) return;
-    
+
     _isPolling = true;
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (!mounted || _selectedChildId == null) {
@@ -121,65 +163,71 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
       _fetchTrustedContacts(_selectedChildId!);
     });
   }
-  
+
   void _stopTrustedContactsPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _isPolling = false;
   }
-  
+
   Future<void> _fetchTrustedContacts(String childId) async {
     try {
       final response = await ApiClient.getTrustedContacts(childId);
+
       if (response.statusCode == 200 && mounted) {
         final List<dynamic> data = jsonDecode(response.body);
         final newContacts = data.cast<Map<String, dynamic>>();
-        
-        // Only update if data changed
+
         if (_contactsChanged(newContacts)) {
           setState(() {
             _trustedContacts = newContacts;
           });
-          
-          // Stop polling if no more pending contacts
-          final hasPendingContacts = _trustedContacts.any(
-            (contact) => (contact['status'] ?? '').toLowerCase() == 'pending'
-          );
-          if (!hasPendingContacts) {
-            _stopTrustedContactsPolling();
-          }
+        }
+
+        final hasPendingContacts = _trustedContacts.any(
+          (contact) =>
+              (contact['status'] ?? '').toString().toLowerCase() == 'pending',
+        );
+
+        if (!hasPendingContacts) {
+          _stopTrustedContactsPolling();
         }
       }
     } catch (e) {
-      // Silently fail during polling to avoid spamming errors
       debugPrint('Polling error: $e');
     }
   }
-  
+
   bool _contactsChanged(List<Map<String, dynamic>> newContacts) {
     if (_trustedContacts.length != newContacts.length) return true;
-    
+
     for (int i = 0; i < _trustedContacts.length; i++) {
       final oldContact = _trustedContacts[i];
       final newContact = newContacts[i];
+
       if (oldContact['status'] != newContact['status'] ||
-          oldContact['email'] != newContact['email']) {
+          oldContact['email'] != newContact['email'] ||
+          oldContact['relationship'] != newContact['relationship'] ||
+          oldContact['role'] != newContact['role']) {
         return true;
       }
     }
+
     return false;
   }
 
   void _selectChild(Map<String, dynamic> child) {
-    // Stop polling for previous child
     _stopTrustedContactsPolling();
-    
+
     setState(() {
-      _selectedChildId = child['id'];
+      _selectedChildId = child['id']?.toString();
       _selectedChild = child;
       _trustedContacts = [];
     });
-    _loadTrustedContacts(child['id']);
+
+    if (_selectedChildId != null) {
+      _loadTrustedContacts(_selectedChildId!);
+    }
   }
 
   void _showAddChildDialog() {
@@ -191,7 +239,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: _cardColor,
         child: Container(
@@ -218,14 +266,17 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     style: GoogleFonts.inter(color: _primaryTextColor),
                     decoration: InputDecoration(
                       labelText: 'Username',
-                      labelStyle: GoogleFonts.inter(fontSize: 14, color: _secondaryTextColor),
+                      labelStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: _secondaryTextColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
                       fillColor: _fieldFillColor,
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -234,14 +285,17 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     style: GoogleFonts.inter(color: _primaryTextColor),
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      labelStyle: GoogleFonts.inter(fontSize: 14, color: _secondaryTextColor),
+                      labelStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: _secondaryTextColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
                       fillColor: _fieldFillColor,
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -249,14 +303,17 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     style: GoogleFonts.inter(color: _primaryTextColor),
                     decoration: InputDecoration(
                       labelText: 'Name',
-                      labelStyle: GoogleFonts.inter(fontSize: 14, color: _secondaryTextColor),
+                      labelStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: _secondaryTextColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
                       fillColor: _fieldFillColor,
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -265,25 +322,36 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     style: GoogleFonts.inter(color: _primaryTextColor),
                     decoration: InputDecoration(
                       labelText: 'Age',
-                      labelStyle: GoogleFonts.inter(fontSize: 14, color: _secondaryTextColor),
+                      labelStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: _secondaryTextColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
                       fillColor: _fieldFillColor,
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Required';
+                      final parsed = int.tryParse(v);
+                      if (parsed == null) return 'Enter a valid number';
+                      if (parsed <= 0) return 'Age must be greater than 0';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Navigator.pop(dialogContext),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: BorderSide(
-                              color: _isDarkMode ? Colors.grey[600]! : const Color(0xFFD1D5DB),
+                              color: _isDarkMode
+                                  ? Colors.grey[600]!
+                                  : const Color(0xFFD1D5DB),
                               width: 1.5,
                             ),
                             shape: RoundedRectangleBorder(
@@ -304,38 +372,46 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            if (formKey.currentState!.validate()) {
-                              try {
-                                final response = await ApiClient.addChild(
-                                  username: usernameController.text.trim(),
-                                  password: passwordController.text,
-                                  name: nameController.text.trim(),
-                                  age: int.parse(ageController.text),
-                                );
+                            if (!formKey.currentState!.validate()) return;
 
-                                if (response.statusCode == 201 || response.statusCode == 200) {
-                                  Navigator.pop(context);
-                                  _loadChildren();
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Child added successfully')),
-                                    );
-                                  }
-                                } else {
-                                  final data = jsonDecode(response.body);
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(data['detail'] ?? 'Failed to add child')),
-                                    );
-                                  }
+                            try {
+                              final response = await ApiClient.addChild(
+                                username: usernameController.text.trim(),
+                                password: passwordController.text,
+                                name: nameController.text.trim(),
+                                age: int.parse(ageController.text),
+                              );
+
+                              if (response.statusCode == 201 ||
+                                  response.statusCode == 200) {
+                                if (Navigator.of(dialogContext).canPop()) {
+                                  Navigator.pop(dialogContext);
                                 }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e')),
-                                  );
-                                }
+
+                                await _loadChildren();
+
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Child added successfully'),
+                                  ),
+                                );
+                              } else {
+                                final data = jsonDecode(response.body);
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      data['detail'] ?? 'Failed to add child',
+                                    ),
+                                  ),
+                                );
                               }
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -371,13 +447,18 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     final emailController = TextEditingController();
     String? selectedRelationship;
     bool isInviting = false;
-    final relationshipOptions = ['Teacher', 'Relative', 'Family Friend', 'Other'];
+    const relationshipOptions = [
+      'Teacher',
+      'Relative',
+      'Family Friend',
+      'Other',
+    ];
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setLocalState) => Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -402,15 +483,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
                 const SizedBox(height: 32),
-                
-                // Email Address
                 Text(
                   'Email Address',
                   style: GoogleFonts.inter(
@@ -427,7 +506,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   style: GoogleFonts.inter(color: _primaryTextColor),
                   decoration: InputDecoration(
                     hintText: 'contact@email.com',
-                    hintStyle: TextStyle(color: _secondaryTextColor.withOpacity(0.6)),
+                    hintStyle: TextStyle(
+                      color: _secondaryTextColor.withValues(alpha: 0.6),
+                    ),
                     filled: true,
                     fillColor: _dialogFieldFillColor,
                     border: OutlineInputBorder(
@@ -441,8 +522,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Relationship
                 Text(
                   'Relationship',
                   style: GoogleFonts.inter(
@@ -465,27 +544,35 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       dropdownColor: _cardColor,
                       hint: Text(
                         'Select relationship',
-                        style: TextStyle(color: _secondaryTextColor.withOpacity(0.6)),
+                        style: TextStyle(
+                          color: _secondaryTextColor.withValues(alpha: 0.6),
+                        ),
                       ),
-                      icon: Icon(Icons.keyboard_arrow_down, color: _secondaryTextColor),
-                      style: GoogleFonts.inter(color: _primaryTextColor, fontSize: 14),
-                      items: relationshipOptions.map((String value) {
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: _secondaryTextColor,
+                      ),
+                      style: GoogleFonts.inter(
+                        color: _primaryTextColor,
+                        fontSize: 14,
+                      ),
+                      items: relationshipOptions.map((value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
                         );
                       }).toList(),
-                      onChanged: isInviting ? null : (String? newValue) {
-                        setState(() {
-                          selectedRelationship = newValue;
-                        });
-                      },
+                      onChanged: isInviting
+                          ? null
+                          : (String? newValue) {
+                              setLocalState(() {
+                                selectedRelationship = newValue;
+                              });
+                            },
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Info text
                 Text(
                   'They will receive an email and must accept to connect.',
                   style: TextStyle(
@@ -495,72 +582,85 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
-                // Send Invitation Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: isInviting ? null : () async {
-                      if (emailController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter an email address')),
-                        );
-                        return;
-                      }
-                      
-                      setState(() {
-                        isInviting = true;
-                      });
-                      
-                      try {
-                        final response = await ApiClient.inviteTrustedContact(
-                          childId,
-                          emailController.text.trim(),
-                          relationship: selectedRelationship,
-                        );
+                    onPressed: isInviting
+                        ? null
+                        : () async {
+                            if (emailController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter an email address'),
+                                ),
+                              );
+                              return;
+                            }
 
-                        if (response.statusCode == 201 || response.statusCode == 200) {
-                          Navigator.pop(context);
-                          // Immediately refresh the list
-                          _fetchTrustedContacts(childId);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Invitation sent successfully'),
-                                backgroundColor: Color(0xFF22C55E),
-                              ),
-                            );
-                          }
-                        } else {
-                          setState(() {
-                            isInviting = false;
-                          });
-                          final data = jsonDecode(response.body);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(data['detail'] ?? 'Failed to send invitation')),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        setState(() {
-                          isInviting = false;
-                        });
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
-                        }
-                      }
-                    },
-                    icon: isInviting 
+                            setLocalState(() {
+                              isInviting = true;
+                            });
+
+                            try {
+                              final response =
+                                  await ApiClient.inviteTrustedContact(
+                                childId,
+                                emailController.text.trim(),
+                                relationship: selectedRelationship,
+                              );
+
+                              if (response.statusCode == 201 ||
+                                  response.statusCode == 200) {
+                                if (Navigator.of(dialogContext).canPop()) {
+                                  Navigator.pop(dialogContext);
+                                }
+
+                                await _fetchTrustedContacts(childId);
+
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Invitation sent successfully'),
+                                    backgroundColor: Color(0xFF22C55E),
+                                  ),
+                                );
+                              } else {
+                                setLocalState(() {
+                                  isInviting = false;
+                                });
+
+                                final data = jsonDecode(response.body);
+
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      data['detail'] ??
+                                          'Failed to send invitation',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              setLocalState(() {
+                                isInviting = false;
+                              });
+
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            }
+                          },
+                    icon: isInviting
                         ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Icon(Icons.email_outlined, size: 20),
@@ -589,7 +689,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     );
   }
 
-  void _showRemoveTrustedContactDialog(String childId, String trustedId, String email) {
+  void _showRemoveTrustedContactDialog(
+    String childId,
+    String trustedId,
+    String email,
+  ) {
     final reasonController = TextEditingController();
     String? errorText;
     bool isDeleting = false;
@@ -597,8 +701,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setLocalState) => Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -623,14 +727,14 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: isDeleting ? null : () => Navigator.pop(context),
+                      onPressed:
+                          isDeleting ? null : () => Navigator.pop(dialogContext),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                
                 Text(
                   'Contact: $email',
                   style: TextStyle(
@@ -640,8 +744,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Reason for removal
                 Text(
                   'Reason for removal',
                   style: GoogleFonts.inter(
@@ -657,26 +759,31 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   enabled: !isDeleting,
                   style: GoogleFonts.inter(color: _primaryTextColor),
                   decoration: InputDecoration(
-                    hintText: 'Please provide a reason for removing this contact...',
-                    hintStyle: TextStyle(color: _secondaryTextColor.withOpacity(0.6)),
+                    hintText:
+                        'Please provide a reason for removing this contact...',
+                    hintStyle: TextStyle(
+                      color: _secondaryTextColor.withValues(alpha: 0.6),
+                    ),
                     filled: true,
                     fillColor: _dialogFieldFillColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: errorText != null 
+                      borderSide: errorText != null
                           ? const BorderSide(color: Colors.red, width: 1.5)
                           : BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: errorText != null 
+                      borderSide: errorText != null
                           ? const BorderSide(color: Colors.red, width: 1.5)
                           : BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: errorText != null ? Colors.red : const Color(0xFF43A047),
+                        color: errorText != null
+                            ? Colors.red
+                            : const Color(0xFF43A047),
                         width: 1.5,
                       ),
                     ),
@@ -685,24 +792,25 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   ),
                   onChanged: (value) {
                     if (errorText != null && value.trim().length >= 3) {
-                      setState(() {
+                      setLocalState(() {
                         errorText = null;
                       });
                     }
                   },
                 ),
                 const SizedBox(height: 32),
-                
-                // Buttons
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: isDeleting ? null : () => Navigator.pop(context),
+                        onPressed:
+                            isDeleting ? null : () => Navigator.pop(dialogContext),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: BorderSide(
-                            color: _isDarkMode ? Colors.grey[600]! : const Color(0xFFD1D5DB),
+                            color: _isDarkMode
+                                ? Colors.grey[600]!
+                                : const Color(0xFFD1D5DB),
                             width: 1.5,
                           ),
                           shape: RoundedRectangleBorder(
@@ -722,68 +830,81 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: isDeleting ? null : () async {
-                          final reason = reasonController.text.trim();
-                          if (reason.isEmpty) {
-                            setState(() {
-                              errorText = 'Reason is required';
-                            });
-                            return;
-                          }
-                          if (reason.length < 3) {
-                            setState(() {
-                              errorText = 'Reason must be at least 3 characters';
-                            });
-                            return;
-                          }
-                          
-                          setState(() {
-                            isDeleting = true;
-                          });
-                          
-                          try {
-                            final response = await ApiClient.removeTrustedContact(
-                              childId,
-                              trustedId,
-                              reason,
-                            );
+                        onPressed: isDeleting
+                            ? null
+                            : () async {
+                                final reason = reasonController.text.trim();
 
-                            Navigator.pop(context);
-                            
-                            if (response.statusCode == 200) {
-                              // Immediately refresh the list
-                              _fetchTrustedContacts(childId);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Trusted contact removed successfully'),
-                                    backgroundColor: Color(0xFF22C55E),
-                                  ),
-                                );
-                              }
-                            } else {
-                              final data = jsonDecode(response.body);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Failed to remove contact: ${data['message'] ?? 'Unknown error'}'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
+                                if (reason.isEmpty) {
+                                  setLocalState(() {
+                                    errorText = 'Reason is required';
+                                  });
+                                  return;
+                                }
+
+                                if (reason.length < 3) {
+                                  setLocalState(() {
+                                    errorText =
+                                        'Reason must be at least 3 characters';
+                                  });
+                                  return;
+                                }
+
+                                setLocalState(() {
+                                  isDeleting = true;
+                                });
+
+                                try {
+                                  final response =
+                                      await ApiClient.removeTrustedContact(
+                                    childId,
+                                    trustedId,
+                                    reason,
+                                  );
+
+                                  if (Navigator.of(dialogContext).canPop()) {
+                                    Navigator.pop(dialogContext);
+                                  }
+
+                                  if (response.statusCode == 200) {
+                                    await _fetchTrustedContacts(childId);
+
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Trusted contact removed successfully',
+                                        ),
+                                        backgroundColor: Color(0xFF22C55E),
+                                      ),
+                                    );
+                                  } else {
+                                    final data = jsonDecode(response.body);
+
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Failed to remove contact: ${data['message'] ?? 'Unknown error'}',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (Navigator.of(dialogContext).canPop()) {
+                                    Navigator.pop(dialogContext);
+                                  }
+
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFDC2626),
                           foregroundColor: Colors.white,
@@ -793,13 +914,14 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: isDeleting 
+                        child: isDeleting
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
                             : Text(
@@ -827,35 +949,35 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     super.dispose();
   }
 
-  void _logout() async {
+  Future<void> _logout() async {
     await _authService.logout();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-        (route) => false,
-      );
-    }
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isWideScreen = MediaQuery.of(context).size.width > 900;
-    
+
     return Scaffold(
       backgroundColor: _pageBackground,
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             _buildHeader(),
-            
-            // Main Content
             Expanded(
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF43A047)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF43A047),
+                        ),
                       ),
                     )
                   : isWideScreen
@@ -881,13 +1003,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(_isDarkMode ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: _isDarkMode ? 0.2 : 0.04),
             blurRadius: _isDarkMode ? 8 : 12,
             offset: Offset(0, _isDarkMode ? 2 : 3),
           ),
           if (!_isDarkMode)
             BoxShadow(
-              color: const Color(0xFF43A047).withOpacity(0.02),
+              color: const Color(0xFF43A047).withValues(alpha: 0.02),
               blurRadius: 8,
               offset: const Offset(0, 1),
             ),
@@ -921,7 +1043,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           ),
           Row(
             children: [
-              // Dark Mode Toggle Button
               IconButton(
                 onPressed: () {
                   setState(() {
@@ -929,15 +1050,20 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                   });
                 },
                 icon: Icon(
-                  _isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  _isDarkMode
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined,
                   size: 22,
                 ),
-                tooltip: _isDarkMode ? 'Disable dark mode' : 'Enable dark mode',
+                tooltip:
+                    _isDarkMode ? 'Disable dark mode' : 'Enable dark mode',
                 style: IconButton.styleFrom(
-                  foregroundColor: _isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFF6B7280),
-                  backgroundColor: _isDarkMode 
-                      ? const Color(0xFFFBBF24).withOpacity(0.1)
-                      : const Color(0xFFE8F5E9).withOpacity(0.5),
+                  foregroundColor: _isDarkMode
+                      ? const Color(0xFFFBBF24)
+                      : const Color(0xFF6B7280),
+                  backgroundColor: _isDarkMode
+                      ? const Color(0xFFFBBF24).withValues(alpha: 0.10)
+                      : const Color(0xFFE8F5E9).withValues(alpha: 0.50),
                   padding: const EdgeInsets.all(12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -945,7 +1071,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Logout Button
               OutlinedButton.icon(
                 onPressed: _logout,
                 icon: const Icon(Icons.logout, size: 18),
@@ -958,8 +1083,14 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF43A047),
-                  side: const BorderSide(color: Color(0xFF43A047), width: 1.5),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  side: const BorderSide(
+                    color: Color(0xFF43A047),
+                    width: 1.5,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -976,13 +1107,10 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left Column - Children List
         Expanded(
           flex: 11,
           child: _buildChildrenCard(),
         ),
-        
-        // Right Column - Child Details
         Expanded(
           flex: 19,
           child: _buildChildDetails(),
@@ -1017,13 +1145,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(_isDarkMode ? 0.3 : 0.05),
+            color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
             blurRadius: _isDarkMode ? 20 : 24,
             offset: Offset(0, _isDarkMode ? 4 : 6),
           ),
           if (!_isDarkMode)
             BoxShadow(
-              color: const Color(0xFF43A047).withOpacity(0.03),
+              color: const Color(0xFF43A047).withValues(alpha: 0.03),
               blurRadius: 16,
               offset: const Offset(0, 2),
             ),
@@ -1058,7 +1186,10 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF43A047),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1068,7 +1199,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          
           if (_children.isEmpty)
             Center(
               child: Padding(
@@ -1126,11 +1256,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   }
 
   Widget _buildChildTile(Map<String, dynamic> child) {
-    final childId = child['id'];
+    final childId = child['id']?.toString();
     final isSelected = _selectedChildId == childId;
-    final name = child['name'] ?? 'Unknown';
-    final age = child['age'];
-    final username = child['username'] ?? 'N/A';
+    final name = (child['name'] ?? 'Unknown').toString();
+    final age = child['age']?.toString() ?? 'N/A';
+    final username = (child['username'] ?? 'N/A').toString();
 
     return InkWell(
       onTap: () => _selectChild(child),
@@ -1141,22 +1271,23 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           color: isSelected ? _selectedChildBg : _unselectedChildBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected 
-                ? const Color(0xFF43A047) 
+            color: isSelected
+                ? const Color(0xFF43A047)
                 : (_isDarkMode ? _borderColor : const Color(0xFFE3EAE5)),
             width: isSelected ? 2 : 1.5,
           ),
-          boxShadow: !_isDarkMode && isSelected ? [
-            BoxShadow(
-              color: const Color(0xFF43A047).withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: !_isDarkMode && isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF43A047).withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
-            // Avatar
             Container(
               width: 48,
               height: 48,
@@ -1172,7 +1303,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
               ),
               child: Center(
                 child: Text(
-                  name[0].toUpperCase(),
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -1222,10 +1353,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
 
   Widget _buildStatusChip(String label, bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: isActive ? const Color(0xFF43A047) : const Color(0xFF9CA3AF),
         borderRadius: BorderRadius.circular(6),
@@ -1256,13 +1384,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_isDarkMode ? 0.3 : 0.05),
+              color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
               blurRadius: _isDarkMode ? 20 : 24,
               offset: Offset(0, _isDarkMode ? 4 : 6),
             ),
             if (!_isDarkMode)
               BoxShadow(
-                color: const Color(0xFF43A047).withOpacity(0.03),
+                color: const Color(0xFF43A047).withValues(alpha: 0.03),
                 blurRadius: 16,
                 offset: const Offset(0, 2),
               ),
@@ -1299,9 +1427,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
       );
     }
 
-    final name = _selectedChild!['name'] ?? 'Unknown';
-    final age = _selectedChild!['age'];
-    final username = _selectedChild!['username'] ?? 'N/A';
+    final name = (_selectedChild!['name'] ?? 'Unknown').toString();
+    final age = _selectedChild!['age']?.toString() ?? 'N/A';
+    final username = (_selectedChild!['username'] ?? 'N/A').toString();
     final alertConsent = _selectedChild!['alerts_consent'] == true;
 
     return Container(
@@ -1318,13 +1446,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(_isDarkMode ? 0.3 : 0.05),
+                color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
                 blurRadius: _isDarkMode ? 20 : 24,
                 offset: Offset(0, _isDarkMode ? 4 : 6),
               ),
               if (!_isDarkMode)
                 BoxShadow(
-                  color: const Color(0xFF43A047).withOpacity(0.03),
+                  color: const Color(0xFF43A047).withValues(alpha: 0.03),
                   blurRadius: 16,
                   offset: const Offset(0, 2),
                 ),
@@ -1333,10 +1461,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Child Summary Section
               Row(
                 children: [
-                  // Avatar
                   Container(
                     width: 72,
                     height: 72,
@@ -1349,7 +1475,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF43A047).withOpacity(0.3),
+                          color: const Color(0xFF43A047).withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -1357,7 +1483,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        name[0].toUpperCase(),
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
                         style: GoogleFonts.inter(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -1395,28 +1521,27 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              
-              // Info Chips
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
                   _buildInfoChip(Icons.cake_outlined, 'Age $age'),
-                  const SizedBox(width: 12),
                   _buildInfoChip(
-                    alertConsent ? Icons.notifications_active : Icons.notifications_off,
+                    alertConsent
+                        ? Icons.notifications_active
+                        : Icons.notifications_off,
                     alertConsent ? 'Alerts ON' : 'Alerts OFF',
                     isAlert: true,
                     alertStatus: alertConsent,
                   ),
                 ],
               ),
-              
               const SizedBox(height: 32),
               Divider(color: _dividerColor, height: 1),
               const SizedBox(height: 32),
-              
-              // Trusted Contacts Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'Trusted Contacts',
@@ -1427,30 +1552,70 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                       letterSpacing: -0.3,
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showInviteTrustedDialog(_selectedChildId!),
-                    icon: const Icon(Icons.person_add, size: 18),
-                    label: Text(
-                      'Invite',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ParentDrawingsScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'View Child Drawings',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF43A047),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      ElevatedButton.icon(
+                        onPressed: _selectedChildId == null
+                            ? null
+                            : () => _showInviteTrustedDialog(_selectedChildId!),
+                        icon: const Icon(Icons.person_add, size: 18),
+                        label: Text(
+                          'Invite',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF43A047),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
                       ),
-                      elevation: 0,
-                    ),
+                    ],
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              
               if (_trustedContacts.isEmpty)
                 Center(
                   child: Padding(
@@ -1511,13 +1676,23 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, {bool isAlert = false, bool alertStatus = false}) {
+  Widget _buildInfoChip(
+    IconData icon,
+    String label, {
+    bool isAlert = false,
+    bool alertStatus = false,
+  }) {
     final bgColor = isAlert
-        ? (alertStatus ? const Color(0xFFF0F9F2) : const Color(0xFFFEF2F2))
-        : const Color(0xFFF3F4F6);
+        ? (alertStatus
+            ? const Color(0xFFF0F9F2)
+            : const Color(0xFFFEF2F2))
+        : (_isDarkMode ? _subtleSurfaceTint : const Color(0xFFF3F4F6));
+
     final textColor = isAlert
-        ? (alertStatus ? const Color(0xFF43A047) : const Color(0xFFDC2626))
-        : const Color(0xFF6B7280);
+        ? (alertStatus
+            ? const Color(0xFF43A047)
+            : const Color(0xFFDC2626))
+        : (_isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1544,16 +1719,21 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   }
 
   Widget _buildTrustedContactRow(Map<String, dynamic> contact) {
-    final status = contact['status'] ?? 'pending';
-    final isAccepted = status.toLowerCase() == 'accepted';
-    final email = contact['email'] ?? 'N/A';
-    final relationship = contact['relationship'] ?? contact['role'] ?? 'N/A';
+    final statusRaw = (contact['status'] ?? 'pending').toString();
+    final statusLower = statusRaw.toLowerCase();
+    final isAccepted = statusLower == 'accepted';
+    final email = (contact['email'] ?? 'N/A').toString();
+    final relationship =
+        (contact['relationship'] ?? contact['role'] ?? 'N/A').toString();
+
+    final displayStatus = statusRaw.isNotEmpty
+        ? statusRaw[0].toUpperCase() + statusRaw.substring(1)
+        : 'Pending';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          // Contact Info
           Expanded(
             child: Row(
               children: [
@@ -1605,12 +1785,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Status Badge
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: isAccepted
                   ? const Color(0xFFF0F9F2)
@@ -1618,7 +1794,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              status[0].toUpperCase() + status.substring(1),
+              displayStatus,
               style: GoogleFonts.inter(
                 color: isAccepted
                     ? const Color(0xFF43A047)
@@ -1630,20 +1806,21 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // Delete Button
           Container(
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.08),
+              color: Colors.red.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),
               color: const Color(0xFFDC2626),
-              onPressed: () => _showRemoveTrustedContactDialog(
-                _selectedChildId!,
-                contact['id']?.toString() ?? '',
-                email,
-              ),
+              onPressed: _selectedChildId == null
+                  ? null
+                  : () => _showRemoveTrustedContactDialog(
+                        _selectedChildId!,
+                        contact['id']?.toString() ?? '',
+                        email,
+                      ),
               tooltip: 'Remove',
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(),
@@ -1653,5 +1830,4 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
       ),
     );
   }
-
 }

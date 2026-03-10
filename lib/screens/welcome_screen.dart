@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'parent_login_screen.dart';
 import 'parent_register_screen.dart';
 import 'child_login_screen.dart';
+import 'home_screen.dart';
+import 'balloon_breath_page.dart';
+import 'bubble_pop_page.dart';
+import 'onboarding_lottie_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -17,7 +23,6 @@ class WelcomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                // Logo/Icon
                 Container(
                   width: 120,
                   height: 120,
@@ -32,12 +37,12 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                const Text(
+                Text(
                   'සුව මනස',
-                  style: TextStyle(
+                  style: GoogleFonts.notoSansSinhala(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF22C55E),
+                    color: const Color(0xFF22C55E),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -52,12 +57,23 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 const Text(
                   'Student Mental Health Assessment',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
-                
-                // Parent Login Button
+                const SizedBox(height: 12),
+                const Text(
+                  'Discover music tailored to your mood.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -88,8 +104,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                // Register as Parent Button
+
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -123,8 +138,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                // Student Login Button
+
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -152,6 +166,75 @@ class WelcomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HomeScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Get Started'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BalloonBreathPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('Breathing Exercise'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BubblePopPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('Bubble Pop Game'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const OnboardingLottieScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Art Therapy Intro'),
                   ),
                 ),
               ],
