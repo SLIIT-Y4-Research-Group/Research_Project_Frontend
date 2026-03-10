@@ -8,6 +8,7 @@ import 'home_screen.dart';
 import 'balloon_breath_page.dart';
 import 'bubble_pop_page.dart';
 import 'onboarding_lottie_screen.dart';
+import 'leaderboard_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -235,6 +236,23 @@ class WelcomeScreen extends StatelessWidget {
                       );
                     },
                     child: const Text('Art Therapy Intro'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LeaderboardScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Leaderboard'),
                   ),
                 ),
               ],

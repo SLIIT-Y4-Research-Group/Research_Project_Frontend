@@ -10,9 +10,12 @@ class ApiConfig {
   static const String emotionPredictWithHappyFace =
       '$baseUrl/emotion/predict-with-happy-face';
 
+  // ================= LEADERBOARD API =================
+  static const String leaderboardBase = '$baseUrl/leaderboard';
+
   // ================= YOUR SINHALA MOOD API =================
   // Sinhala Mood Classification API
-  static const String BASE_URL = 'http://3.110.51.143:8000';
+  static const String BASE_URL = 'http://127.0.0.1:8000';
 
   static const String PREDICT_ENDPOINT = '$BASE_URL/mood/predict';
   static const String PREDICT_OVERALL_ENDPOINT =

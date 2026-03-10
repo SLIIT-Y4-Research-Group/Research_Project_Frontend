@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../services/leaderboard_service.dart';
 
 class BubblePopPage extends StatefulWidget {
   const BubblePopPage({super.key});
@@ -8,6 +10,7 @@ class BubblePopPage extends StatefulWidget {
   @override
   State<BubblePopPage> createState() => _BubblePopPageState();
 }
+
 
 class _BubblePopPageState extends State<BubblePopPage> {
   final Random _random = Random();
@@ -17,6 +20,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
   int timeLeft = 30;
   bool gameRunning = false;
   bool _isLoading = false;
+  bool _isSubmitting = false;
 
   Timer? spawnTimer;
   Timer? moveTimer;
@@ -279,6 +283,21 @@ class _BubblePopPageState extends State<BubblePopPage> {
                       const SizedBox(height: 10),
                       Text("ඔබගේ ලකුණු: $score"),
                       const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed:
+                              _isSubmitting ? null : () => _submitScore(context),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text("Submit Score"),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromRGBO(76, 175, 80, 1),
@@ -310,6 +329,104 @@ class _BubblePopPageState extends State<BubblePopPage> {
       ),
     );
   }
+
+  Future<void> _submitScore(BuildContext context) async {
+    if (_isSubmitting) return;
+
+    final nameController = TextEditingController();
+    final levelController = TextEditingController(text: "1");
+    final formKey = GlobalKey<FormState>();
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text("Submit Score"),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: "Player Name"),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return "Enter player name";
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: levelController,
+                    decoration: const InputDecoration(labelText: "Level"),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      final parsed = int.tryParse(value ?? "");
+                      if (parsed == null) {
+                        return "Enter a valid level";
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (!(formKey.currentState?.validate() ?? false)) {
+                    return;
+                  }
+                  Navigator.pop(dialogContext, true);
+                },
+                child: const Text("Submit"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (result != true) return;
+
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      final timePlayed = (30 - timeLeft).clamp(0, 30).toDouble();
+
+      await LeaderboardService.createEntry(
+        playerName: nameController.text.trim(),
+        score: score,
+        level: int.parse(levelController.text.trim()),
+        time: timePlayed,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Score submitted.")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Submit failed: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+      nameController.dispose();
+      levelController.dispose();
+    }
+  }
+
 }
 
 class _Bubble {
@@ -363,3 +480,12 @@ class _InfoBox extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+

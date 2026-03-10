@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import '../config/api_config.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   final Map<String, dynamic> song;
@@ -53,7 +56,22 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   Future<void> _loadSong(Map<String, dynamic> song) async {
-    final url = song['audio_url'] as String?;
+    Map<String, dynamic> songToPlay = song;
+    final urlValue =
+        (song['audio_url'] ?? song['music_url']) as String?;
+    final idValue = song['id']?.toString();
+
+    if ((urlValue == null || urlValue.isEmpty) &&
+        idValue != null &&
+        idValue.isNotEmpty) {
+      final details = await _fetchTrackDetails(idValue);
+      if (details != null) {
+        songToPlay = {...song, ...details};
+        _updateCurrentSong(songToPlay);
+      }
+    }
+
+    final url = songToPlay['audio_url'] as String?;
     if (url == null || url.isEmpty) return;
     try {
       setState(() => _isLoading = true);
@@ -66,6 +84,32 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
         );
       }
     }
+  }
+
+  Future<Map<String, dynamic>?> _fetchTrackDetails(String trackId) async {
+    final uri = Uri.parse('${ApiConfig.BASE_URL}/music/tracks/$trackId');
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      return null;
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return {
+      'id': data['id'] ?? data['_id'] ?? trackId,
+      'title': data['title'],
+      'subtitle': data['artist'],
+      'audio_url': data['audio_url'] ?? data['music_url'],
+      'cover_url': data['cover_url'],
+    };
+  }
+
+  void _updateCurrentSong(Map<String, dynamic> song) {
+    setState(() {
+      _currentSong = song;
+      if (_currentIndex >= 0 && _currentIndex < widget.playlist.length) {
+        widget.playlist[_currentIndex] = song;
+      }
+    });
   }
 
   @override
