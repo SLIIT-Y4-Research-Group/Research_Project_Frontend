@@ -90,12 +90,21 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
+<<<<<<< HEAD
             VALUE "FileDescription", "storygen_flutter" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "storygen_flutter" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "storygen_flutter.exe" "\0"
             VALUE "ProductName", "storygen_flutter" "\0"
+=======
+            VALUE "FileDescription", "my_first_app" "\0"
+            VALUE "FileVersion", VERSION_AS_STRING "\0"
+            VALUE "InternalName", "my_first_app" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
+            VALUE "OriginalFilename", "my_first_app.exe" "\0"
+            VALUE "ProductName", "my_first_app" "\0"
+>>>>>>> 212142d8663e5f0001ce1ef82a5c3bca963c6f82
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
