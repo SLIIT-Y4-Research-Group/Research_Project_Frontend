@@ -665,16 +665,19 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
 
   final Map<String, Map<String, dynamic>> _characterData = {
     'hare': {
+      'emoji': '🐦',
       'sinhala': 'කුරුල්ලා',
       'description': 'කනස්සල්ලෙන් නමුත් දක්ෂයි',
       'color': Colors.brown,
     },
     'lion': {
+      'emoji': '🦁',
       'sinhala': 'සිංහයා',
       'description': 'ශක්තිමත් නමුත් තනිකම',
       'color': Colors.orange,
     },
     'elephant': {
+      'emoji': '🐘',
       'sinhala': 'අලියා',
       'description': 'කරුණාවන්ත නමුත් බර හදවතක් උසුලයි',
       'color': Colors.grey,
@@ -751,7 +754,7 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
                       backgroundColor: data['color'].withOpacity(0.2),
                       radius: 24,
                       child: Text(
-                        data['sinhala'].substring(0, 1),
+                        data['emoji'],
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

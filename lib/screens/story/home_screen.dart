@@ -175,17 +175,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   //   ),
                   // ),
                   
-                  SizedBox(height: 30),
+                  
                   
                   // Hero section
                   Column(
                     children: [
-                      Icon(
-                        Icons.auto_stories,
-                        size: 100,
-                        color: Color.fromRGBO(113, 212, 131, 1.0),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.6, // 60% of screen width
+                        height: MediaQuery.of(context).size.width * 0.6, // maintain square ratio
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('images/reading.png'),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                       ),
-                      SizedBox(height: 20),
+                     
                       Text(
                         'ළමා හිතකාමී ජන කතා',
                         style: TextStyle(
@@ -321,8 +326,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildQuickAction(
-                        icon: Icons.history,
-                        label: 'ඉතිහාසය',
+                        icon: Icons.bookmark,
+                        label: 'සුරක්ෂිත කථා',
                         onTap: () {
                           Navigator.push(
                             context,

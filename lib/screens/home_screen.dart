@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'scan_screen.dart'; // Import the ScanScreen
 import 'onboarding_screen_1.dart'; //  ADD: Import onboarding screen
+import 'story/home_screen.dart' as StoryHome;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -200,6 +201,38 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
 
+const SizedBox(height: 20),
+
+// --- Navigate to Story Home ---
+SizedBox(
+  width: double.infinity,
+  height: 55,
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.orange,
+      foregroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 0,
+    ),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const StoryHome.HomeScreen(),
+        ),
+      );
+    },
+    child: const Text(
+      'Go to Story Home',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+),
             const SizedBox(height: 30),
 
             // --- Mood Selection ---

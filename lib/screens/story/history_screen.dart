@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../services/story/api_service.dart';
 import '../../models/story/story_model.dart';
 import 'story_display_screen.dart';
+import '../../services/story/local_story_storage.dart';
+import '../../models/story/story_model.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -18,7 +20,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _filter = 'all'; // 'all', 'favorites', 'public', 'private'
   String _sortBy = 'newest'; // 'newest', 'oldest', 'title'
   String _userId = 'test_user_123'; // Replace with actual user ID
-  
+  List<Story> _localStories = [];
+
   @override
   void initState() {
     super.initState();
@@ -26,34 +29,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
   
   Future<void> _loadStories() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final response = await _apiService.getUserStories(_userId);
-      if (response.success) {
-        setState(() {
-          _stories = response.data!;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load stories: ${response.message}')),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    // Load remote stories
+    final response = await _apiService.getUserStories(_userId);
+    List<Story> remoteStories = [];
+    if (response.success && response.data != null) {
+      remoteStories = response.data!;
     }
+
+    // Load local stories
+    _localStories = await LocalStoryStorage.getStories();
+
+    // Merge both lists (optional: remove duplicates based on id)
+    List<Story> mergedStories = [
+      ..._localStories,
+      ...remoteStories.where((r) => !_localStories.any((l) => l.id == r.id)),
+    ];
+
+    setState(() {
+      _stories = mergedStories;
+      _isLoading = false;
+    });
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error loading stories: $e')),
+    );
   }
+}
   
   List<Story> _getFilteredStories() {
     List<Story> filtered = List.from(_stories);
@@ -91,44 +100,57 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
   
   Future<void> _deleteStory(Story story) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('කථාව මකන්න'),
-        content: Text('ඔබට මෙම කථාව මැකීමට අවශ්‍යද? මෙම ක්‍රියාව අහෝසි කළ නොහැක.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('අවලංගු කරන්න'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('මකන්න', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirmed == true) {
-      try {
-        final response = await _apiService.deleteStory(story.id!);
-        if (response.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('කථාව මකා දමන ලදී')),
-          );
-          _loadStories(); // Refresh list
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('මකාදැමීමේදී දෝෂයක්: ${response.message}')),
-          );
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('දෝෂය: $e')),
-        );
-      }
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('කථාව මකන්න'),
+      content: Text('ඔබට මෙම කථාව මැකීමට අවශ්‍යද? මෙම ක්‍රියාව අහෝසි කළ නොහැක.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('අවලංගු කරන්න'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text('මකන්න', style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
+  bool deletedFromServer = false;
+  bool deletedFromLocal = false;
+
+  try {
+    // Delete from server if it has an ID
+    if (story.id != null && story.id!.isNotEmpty) {
+      final response = await _apiService.deleteStory(story.id!);
+      deletedFromServer = response.success;
     }
+
+    // Delete from local storage
+    _localStories.removeWhere((s) => s.id == story.id || s.title == story.title);
+    await LocalStoryStorage.clearStories(); // clear all
+    for (var s in _localStories) {
+      await LocalStoryStorage.saveStory(s); // re-save remaining
+    }
+    deletedFromLocal = true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('කථාව මකා දමන ලදී')),
+    );
+
+    // Reload stories list
+    _loadStories();
+
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('දෝෂය මකාදැමීමේදී: $e')),
+    );
   }
+}
   
   void _showFilterSheet() {
     showModalBottomSheet(
