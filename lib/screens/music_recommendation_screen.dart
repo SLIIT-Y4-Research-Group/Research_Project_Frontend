@@ -26,7 +26,7 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
 
   Future<List<Map<String, dynamic>>> _fetchTracks(String emotion) async {
     final uri = Uri.parse(
-      '${ApiConfig.BASE_URL}/music/tracks?emotion=${Uri.encodeComponent(emotion)}',
+      '${ApiConfig.baseUrl}/music/tracks?emotion=${Uri.encodeComponent(emotion)}',
     );
     final response = await http.get(uri);
     if (response.statusCode != 200) {

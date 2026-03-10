@@ -720,7 +720,7 @@ class _MoodHomeState extends State<MoodHome> {
         }
       } catch (e) {
         setState(() {
-          questions[questionIndex].mood = "Connection Error: $e\n\nCheck:\n- Backend running?\n- Same WiFi?\n- IP: ${ApiConfig.BASE_URL}";
+          questions[questionIndex].mood = "Connection Error: $e\n\nCheck:\n- Backend running?\n- Same WiFi?\n- IP: ${ApiConfig.baseUrl}";
         });
       } finally {
         setState(() {
@@ -1060,17 +1060,58 @@ class _MoodHomeState extends State<MoodHome> {
             print("[MOOD] Could not parse storage response for alert check: $parseError");
             // Continue normal flow if parsing fails
           }
-        } else {
-          print("[MOOD] Failed to store mood: ${storageRes.statusCode} - ${storageRes.body}");
-          // Show warning but continue to result screen
+        } else if (storageRes.statusCode == 409) {
+          // Handle already_exists (conflict)
+          print("[MOOD] Mood already recorded today: ${storageRes.body}");
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text("මනෝභාවය අනාවරණය විය, නමුත් සුරැකීම අසාර්ථක විය"),
-                duration: Duration(seconds: 2),
+                content: Text("අද දවසේ මනෝභාවය දැනටමත් සටහන් කර ඇත."),
+                duration: Duration(seconds: 3),
                 backgroundColor: Colors.orange,
               ),
             );
+          }
+        } else {
+          print("[MOOD] Failed to store mood: ${storageRes.statusCode} - ${storageRes.body}");
+          
+          // Check if response indicates already_exists
+          try {
+            final errorData = jsonDecode(storageRes.body);
+            if (errorData["detail"]?.toString().toLowerCase().contains("already") == true ||
+                errorData["error"]?.toString().toLowerCase().contains("already") == true) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("අද දවසේ මනෝභාවය දැනටමත් සටහන් කර ඇත."),
+                    duration: Duration(seconds: 3),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            } else {
+              // Other error
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("මනෝභාවය අනාවරණය විය, නමුත් සුරැකීම අසාර්ථක විය"),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
+          } catch (parseError) {
+            // Show generic error
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("මනෝභාවය අනාවරණය විය, නමුත් සුරැකීම අසාර්ථක විය"),
+                  duration: Duration(seconds: 2),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
           }
         }
       } catch (storageError) {
@@ -1107,7 +1148,7 @@ class _MoodHomeState extends State<MoodHome> {
   } catch (e) {
     print("[MOOD] Connection error: $e");
     setState(() {
-      mood = "Connection Error\n$e\n\nTroubleshooting:\n✓ Backend running on ${ApiConfig.BASE_URL}?\n✓ Phone & PC on same WiFi?\n✓ Try ${ApiConfig.BASE_URL}/docs in browser";
+      mood = "Connection Error\n$e\n\nTroubleshooting:\n✓ Backend running on ${ApiConfig.baseUrl}?\n✓ Phone & PC on same WiFi?\n✓ Try ${ApiConfig.baseUrl}/docs in browser";
     });
   } finally {
     setState(() => loadingMood = false);

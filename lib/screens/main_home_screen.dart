@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,7 +7,10 @@ import 'onboarding_lottie_screen.dart';
 import 'bubble_pop_page.dart';
 import 'balloon_breath_page.dart';
 import 'mood_home.dart';
+import 'mood_intro_screen.dart';
 import 'scan_screen.dart';
+import 'student_dashboard_screen.dart';
+import '../services/api_client.dart';
 
 class MainHomeScreen extends StatefulWidget {
   const MainHomeScreen({super.key});
@@ -70,6 +74,72 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     );
   }
 
+  Future<void> _handleMoodCheckNavigation() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Check today's mood status before navigating
+      final response = await ApiClient.getTodayMoodStatus();
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final bool todayCompleted = data['completed'] ?? false;
+        
+        if (todayCompleted) {
+          // Already completed today
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+      
+      // Not completed, proceed to mood check
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+      if (!mounted) return;
+      
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const MoodIntroScreen(),
+        ),
+      );
+    } catch (e) {
+      print('[HOME] Error checking mood status: $e');
+      // If check fails, allow navigation (fail-safe)
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+      if (!mounted) return;
+      
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const MoodIntroScreen(),
+        ),
+      );
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,13 +160,19 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFFFFD6E7),
-              child: const Icon(Icons.child_care, color: Colors.brown),
-            ),
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.black87),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const StudentDashboardScreen(),
+                ),
+              );
+            },
+            tooltip: 'My Profile',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -197,7 +273,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                     subtitle: 'Voice based emotion prediction',
                     animationAsset: 'assets/animations/voice.json',
                     color: const Color(0xFF50C2C9),
-                    onTap: () => _navigateTo(const MoodHome()),
+                    onTap: _handleMoodCheckNavigation,
                   ),
                   const SizedBox(height: 16),
                   _MainFunctionCard(

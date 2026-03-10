@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'start_screen.dart';
+import 'main_home_screen.dart';
 
 class MoodResultScreen extends StatelessWidget {
   final String mood;
@@ -14,7 +14,7 @@ class MoodResultScreen extends StatelessWidget {
       return {
         'animation': 'assets/lottie/happyandnormal.json',
         'title': 'Happy',
-        'message': 'ඔයා අද හරිම සතුටුයි කියලා මට පේනවා\n\n'
+        'message': 'ඔයා අද හරිම සතුටෙන් කියලා මට පේනවා\n\n'
             'එහෙම දවසක් තියෙන එක හරිම ලස්සන දෙයක්.\n'
             'ඔයා හොඳට උත්සාහ කරලා තියෙනවා, ඒ නිසාම මේ සතුට ලැබිලා තියෙන්න ඇති.\n\n'
             'හෙටත් මේ වගේ හොඳ හිතක්, හොඳ සිතුවිලි, හොඳ ක්‍රියාවල් කරගෙන යන්න පුළුවන් කියලා මම විශ්වාස කරනවා',
@@ -337,8 +337,10 @@ class MoodResultScreen extends StatelessWidget {
                   ),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const StartScreen()),
+                      // Navigate to home screen and clear navigation stack
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MainHomeScreen()),
                         (route) => false,
                       );
                     },

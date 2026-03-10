@@ -23,7 +23,7 @@ class ApiClient {
 
   static Future<http.Response> registerParent(String email, String password) async {
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/auth/parent/register'),
+      Uri.parse('${ApiConfig.baseUrl}/auth/parent/register'),
       headers: await _getHeaders(),
       body: jsonEncode({
         'email': email,
@@ -34,7 +34,7 @@ class ApiClient {
 
   static Future<http.Response> loginParent(String email, String password) async {
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/auth/parent/login'),
+      Uri.parse('${ApiConfig.baseUrl}/auth/parent/login'),
       headers: await _getHeaders(),
       body: jsonEncode({
         'email': email,
@@ -45,7 +45,7 @@ class ApiClient {
 
   static Future<http.Response> loginChild(String username, String password) async {
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/auth/child/login'),
+      Uri.parse('${ApiConfig.baseUrl}/auth/child/login'),
       headers: await _getHeaders(),
       body: jsonEncode({
         'username': username,
@@ -56,7 +56,7 @@ class ApiClient {
 
   static Future<http.Response> getChildren() async {
     return await http.get(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/children'),
+      Uri.parse('${ApiConfig.baseUrl}/parent/children'),
       headers: await _getHeaders(includeAuth: true),
     );
   }
@@ -68,7 +68,7 @@ class ApiClient {
     required int age,
   }) async {
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/children'),
+      Uri.parse('${ApiConfig.baseUrl}/parent/children'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
         'username': username,
@@ -92,7 +92,7 @@ class ApiClient {
     };
 
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/children/$childId/trusted'),
+      Uri.parse('${ApiConfig.baseUrl}/parent/children/$childId/trusted'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode(payload),
     );
@@ -104,7 +104,7 @@ class ApiClient {
     String reason,
   ) async {
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/children/$childId/trusted/$trustedId/remove'),
+      Uri.parse('${ApiConfig.baseUrl}/parent/children/$childId/trusted/$trustedId/remove'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
         'reason': reason,
@@ -117,7 +117,7 @@ class ApiClient {
     required String mood,
     required String datetime,
   }) async {
-    return await http.post(
+    final response = await http.post(
       Uri.parse(ApiConfig.STORE_MOOD_ENDPOINT),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
@@ -125,26 +125,30 @@ class ApiClient {
         "datetime": datetime,
       }),
     );
+    print('[API] storeMood - Status: ${response.statusCode}, Body: ${response.body}');
+    return response;
   }
 
   // Get Parent Drawings
   static Future<http.Response> getParentDrawings() async {
     return await http.get(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/drawings'),
+      Uri.parse('${ApiConfig.baseUrl}/parent/drawings'),
       headers: await _getHeaders(includeAuth: true),
     );
   }
 
   static Future<http.Response> getTrustedContacts(String childId) async {
+    // Add timestamp to prevent caching
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
     return await http.get(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/children/$childId/trusted'),
+      Uri.parse('${ApiConfig.baseUrl}/parent/children/$childId/trusted?_t=$timestamp'),
       headers: await _getHeaders(includeAuth: true),
     );
   }
 
   static Future<http.Response> updateChildConsent(bool alertsConsent) async {
     return await http.patch(
-      Uri.parse('${ApiConfig.BASE_URL}/child/me/consent'),
+      Uri.parse('${ApiConfig.baseUrl}/child/me/consent'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
         'alerts_consent': alertsConsent,
@@ -154,7 +158,7 @@ class ApiClient {
 
   static Future<http.Response> getChildInfo() async {
     return await http.get(
-      Uri.parse('${ApiConfig.BASE_URL}/child/me'),
+      Uri.parse('${ApiConfig.baseUrl}/child/me'),
       headers: await _getHeaders(includeAuth: true),
     );
   }
@@ -164,11 +168,31 @@ class ApiClient {
     required bool approve,
   }) async {
     return await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/mood/respond_alert_permission'),
+      Uri.parse('${ApiConfig.baseUrl}/mood/respond_alert_permission'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
         "approve": approve,
       }),
     );
+  }
+
+  // Get Today's Mood Status (Child)
+  static Future<http.Response> getTodayMoodStatus() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/child/me/today-mood-status'),
+      headers: await _getHeaders(includeAuth: true),
+    );
+    print('[API] getTodayMoodStatus - Status: ${response.statusCode}, Body: ${response.body}');
+    return response;
+  }
+
+  // Get Weekly Moods (Child)
+  static Future<http.Response> getWeeklyMoods() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/child/me/weekly-moods'),
+      headers: await _getHeaders(includeAuth: true),
+    );
+    print('[API] getWeeklyMoods - Status: ${response.statusCode}, Body: ${response.body}');
+    return response;
   }
 }

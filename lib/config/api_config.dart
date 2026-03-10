@@ -10,14 +10,16 @@ class ApiConfig {
   static const String emotionPredictWithHappyFace =
       '$baseUrl/emotion/predict-with-happy-face';
 
-  // ================= YOUR SINHALA MOOD API =================
-  // Sinhala Mood Classification API
-  static const String BASE_URL = 'http://3.110.51.143:8000';
-
-  static const String PREDICT_ENDPOINT = '$BASE_URL/mood/predict';
-  static const String PREDICT_OVERALL_ENDPOINT =
-      '$BASE_URL/mood/predict_overall';
-  static const String VALIDATE_ANSWER_ENDPOINT = '$BASE_URL/mood/validate_answer';
-  static const String PREDICT_QUESTION_ENDPOINT = '$BASE_URL/mood/predict_question';
-  static const String STORE_MOOD_ENDPOINT = '$BASE_URL/mood/store';
+  // ================= UNIFIED BACKEND API =================
+  // All mood endpoints (prediction + storage) now use the same backend
+  // The ML prediction code has been merged into the main backend
+  
+  // Mood Prediction Endpoints (now using unified baseUrl)
+  static const String PREDICT_ENDPOINT = '$baseUrl/mood/predict';
+  static const String PREDICT_OVERALL_ENDPOINT = '$baseUrl/mood/predict_overall';
+  static const String VALIDATE_ANSWER_ENDPOINT = '$baseUrl/mood/validate_answer';
+  static const String PREDICT_QUESTION_ENDPOINT = '$baseUrl/mood/predict_question';
+  
+  // Mood Storage Endpoint (already using baseUrl)
+  static const String STORE_MOOD_ENDPOINT = '$baseUrl/mood/store';
 }

@@ -16,7 +16,7 @@ class ParentDashboardScreen extends StatefulWidget {
   State<ParentDashboardScreen> createState() => _ParentDashboardScreenState();
 }
 
-class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
+class _ParentDashboardScreenState extends State<ParentDashboardScreen> with WidgetsBindingObserver {
   final _authService = AuthService();
 
   List<Map<String, dynamic>> _children = [];
@@ -73,10 +73,30 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   Color get _subtleSurfaceTint =>
       _isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF8FCF9);
 
+  Future<void> _refreshData() async {
+    await _loadChildren();
+    if (_selectedChildId != null) {
+      await _loadTrustedContacts(_selectedChildId!);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadChildren();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // Refresh data when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      if (_selectedChildId != null) {
+        _loadTrustedContacts(_selectedChildId!);
+      }
+    }
   }
 
   Future<void> _loadChildren() async {
@@ -192,7 +212,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Polling error: $e');
+      // Silently handle polling errors
     }
   }
 
@@ -943,6 +963,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopTrustedContactsPolling();
     super.dispose();
   }
@@ -1102,30 +1123,42 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
   }
 
   Widget _buildTwoColumnLayout() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 11,
-          child: _buildChildrenCard(),
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      color: const Color(0xFF43A047),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 11,
+              child: _buildChildrenCard(),
+            ),
+            Expanded(
+              flex: 19,
+              child: _buildChildDetails(),
+            ),
+          ],
         ),
-        Expanded(
-          flex: 19,
-          child: _buildChildDetails(),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildSingleColumnLayout() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildChildrenCard(),
-          const SizedBox(height: 20),
-          if (_selectedChild != null) _buildChildDetails(),
-        ],
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      color: const Color(0xFF43A047),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildChildrenCard(),
+            const SizedBox(height: 20),
+            if (_selectedChild != null) _buildChildDetails(),
+          ],
+        ),
       ),
     );
   }
@@ -1607,6 +1640,21 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _selectedChildId == null
+                            ? null
+                            : () => _loadTrustedContacts(_selectedChildId!),
+                        icon: const Icon(Icons.refresh, size: 22),
+                        tooltip: 'Refresh status',
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          foregroundColor: const Color(0xFF6B7280),
+                          padding: const EdgeInsets.all(14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ],
