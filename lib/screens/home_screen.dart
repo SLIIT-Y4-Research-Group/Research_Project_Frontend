@@ -215,7 +215,7 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 35),
+            const SizedBox(height: 30),
 
             const Align(
               alignment: Alignment.centerLeft,

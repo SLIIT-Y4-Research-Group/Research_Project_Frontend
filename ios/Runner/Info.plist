@@ -5,7 +5,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
+<<<<<<< HEAD
+<<<<<<< HEAD
+	<string>Storygen Flutter</string>
+=======
+	<string>My First App</string>
+>>>>>>> 212142d8663e5f0001ce1ef82a5c3bca963c6f82
+=======
 	<string>සුවමනස</string>
+>>>>>>> 383296996352fc323994aed948446e0c6ff5df37
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +21,15 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
+<<<<<<< HEAD
+<<<<<<< HEAD
+	<string>storygen_flutter</string>
+=======
+	<string>my_first_app</string>
+>>>>>>> 212142d8663e5f0001ce1ef82a5c3bca963c6f82
+=======
 	<string>සුවමනස</string>
+>>>>>>> 383296996352fc323994aed948446e0c6ff5df37
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
