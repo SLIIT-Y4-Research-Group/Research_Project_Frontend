@@ -10,6 +10,9 @@ class ApiConfig {
   static const String emotionPredictWithHappyFace =
       '$baseUrl/emotion/predict-with-happy-face';
 
+  // ================= LEADERBOARD API =================
+  static const String leaderboardBase = '$baseUrl/leaderboard';
+
   // ================= UNIFIED BACKEND API =================
   // All mood endpoints (prediction + storage) now use the same backend
   // The ML prediction code has been merged into the main backend

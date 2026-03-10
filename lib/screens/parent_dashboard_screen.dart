@@ -168,7 +168,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     if (_selectedChildId == null || !mounted) return;
 
     final hasPendingContacts = _trustedContacts.any(
-      (contact) => (contact['status'] ?? '').toString().toLowerCase() == 'pending',
+      (contact) =>
+          (contact['status'] ?? '').toString().toLowerCase() == 'pending',
     );
 
     if (!hasPendingContacts && _trustedContacts.isNotEmpty) return;
@@ -204,7 +205,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
         }
 
         final hasPendingContacts = _trustedContacts.any(
-          (contact) => (contact['status'] ?? '').toString().toLowerCase() == 'pending',
+          (contact) =>
+              (contact['status'] ?? '').toString().toLowerCase() == 'pending',
         );
 
         if (!hasPendingContacts) {

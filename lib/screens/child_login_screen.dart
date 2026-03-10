@@ -7,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
-import 'onboarding_screen_1.dart';
 import 'main_home_screen.dart';
 
 class ChildLoginScreen extends StatefulWidget {
@@ -49,7 +48,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
 
         await _authService.saveToken(token, 'child');
 
-        // Store child id and child name for home screen
         final prefs = await SharedPreferences.getInstance();
 
         final String childId =
@@ -72,9 +70,7 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-
             MaterialPageRoute(builder: (context) => const MainHomeScreen()),
-
           );
         }
       } else {
@@ -134,7 +130,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
               ),
             ),
           ),
-
           Positioned.fill(
             child: Lottie.asset(
               'assets/lottie/Blue Bubbles Animation.json',
@@ -142,7 +137,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
               repeat: true,
             ),
           ),
-
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -194,7 +188,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-
                                     Center(
                                       child: Text(
                                         'Welcome back! Let\'s see how you feel today.',
@@ -207,7 +200,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 32),
-
                                     TextFormField(
                                       controller: _usernameController,
                                       enabled: !_isLoading,
@@ -254,7 +246,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 20),
-
                                     TextFormField(
                                       controller: _passwordController,
                                       obscureText: _obscurePassword,
@@ -315,7 +306,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
                                       },
                                     ),
                                     const SizedBox(height: 28),
-
                                     SizedBox(
                                       width: double.infinity,
                                       height: 56,
@@ -373,7 +363,6 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
                                           color: Colors.white.withValues(alpha: 0.3),
                                         ),
                                     const SizedBox(height: 16),
-
                                     Center(
                                       child: TextButton(
                                         onPressed: () {

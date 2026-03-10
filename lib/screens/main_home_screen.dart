@@ -11,6 +11,7 @@ import 'mood_intro_screen.dart';
 import 'scan_screen.dart';
 import 'student_dashboard_screen.dart';
 import '../services/api_client.dart';
+import 'story/home_screen.dart' as StoryHome;
 
 class MainHomeScreen extends StatefulWidget {
   const MainHomeScreen({super.key});
@@ -256,7 +257,12 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                     animationAsset: 'assets/animations/story.json',
                     color: const Color(0xFFF6B54C),
                     onTap: () {
-                      _showComingSoon(context, 'කතා මිතුරා');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StoryHome.HomeScreen(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),

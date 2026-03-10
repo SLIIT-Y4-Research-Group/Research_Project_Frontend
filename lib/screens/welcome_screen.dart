@@ -4,6 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'parent_login_screen.dart';
 import 'parent_register_screen.dart';
 import 'child_login_screen.dart';
+import 'home_screen.dart';
+import 'balloon_breath_page.dart';
+import 'bubble_pop_page.dart';
+import 'onboarding_lottie_screen.dart';
+import 'leaderboard_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -151,6 +156,90 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
 
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HomeScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Get Started'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BalloonBreathPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('Breathing Exercise'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BubblePopPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('Bubble Pop Game'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const OnboardingLottieScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Art Therapy Intro'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LeaderboardScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Leaderboard'),
+                  ),
+                ),
               ],
             ),
           ),

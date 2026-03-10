@@ -36,10 +36,10 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
     return data.map((item) {
       final map = item as Map<String, dynamic>;
       return {
-        'id': map['id'],
+        'id': map['id'] ?? map['_id'],
         'title': map['title'] ?? 'Unknown Title',
         'subtitle': map['artist'] ?? 'Unknown Artist',
-        'audio_url': map['audio_url'],
+        'audio_url': map['audio_url'] ?? map['music_url'],
         'cover_url': map['cover_url'],
         'duration': '3:00',
         'colors': _colorsForEmotion(emotion),
