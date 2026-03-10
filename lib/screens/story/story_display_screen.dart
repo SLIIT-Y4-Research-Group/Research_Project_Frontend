@@ -178,24 +178,25 @@ class _StoryDisplayScreenState extends State<StoryDisplayScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor:Color.fromARGB(255, 113, 212, 131),
         title: Text('කථාව'),
         actions: [
-          IconButton(
-            icon: Icon(_isLiked ? Icons.favorite : Icons.favorite_border),
-            onPressed: _toggleLike,
-            color: _isLiked ? Colors.red : null,
-            tooltip: _isLiked ? 'ලයික් ඉවත් කරන්න' : 'ලයික් කරන්න',
-          ),
-          IconButton(
-            icon: Icon(Icons.share),
-            onPressed: _shareStory,
-            tooltip: 'බෙදාගන්න',
-          ),
+          // IconButton(
+          //   icon: Icon(_isLiked ? Icons.favorite : Icons.favorite_border),
+          //   onPressed: _toggleLike,
+          //   color: _isLiked ? Colors.red : null,
+          //   tooltip: _isLiked ? 'ලයික් ඉවත් කරන්න' : 'ලයික් කරන්න',
+          // ),
+          // IconButton(
+          //   icon: Icon(Icons.share),
+          //   onPressed: _shareStory,
+          //   tooltip: 'බෙදාගන්න',
+          // ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'save') _saveToLocal();
               if (value == 'copy') _shareStory();
-              if (value == 'public') _togglePublic();
+              // if (value == 'public') _togglePublic();
               if (value == 'regenerate') {
                 // Navigate back to mood input with same profile
                 Navigator.pop(context);
@@ -223,19 +224,19 @@ class _StoryDisplayScreenState extends State<StoryDisplayScreen> {
                   ],
                 ),
               ),
-              PopupMenuItem(
-                value: 'public',
-                child: Row(
-                  children: [
-                    Icon(
-                      widget.story.isPublic ? Icons.lock : Icons.public,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(widget.story.isPublic ? 'පෞද්ගලික කරන්න' : 'පොදු කරන්න'),
-                  ],
-                ),
-              ),
+              // PopupMenuItem(
+              //   value: 'public',
+              //   child: Row(
+              //     children: [
+              //       Icon(
+              //         widget.story.isPublic ? Icons.lock : Icons.public,
+              //         size: 20,
+              //       ),
+              //       SizedBox(width: 8),
+              //       Text(widget.story.isPublic ? 'පෞද්ගලික කරන්න' : 'පොදු කරන්න'),
+              //     ],
+              //   ),
+              // ),
               PopupMenuItem(
                 value: 'regenerate',
                 child: Row(
@@ -250,6 +251,7 @@ class _StoryDisplayScreenState extends State<StoryDisplayScreen> {
           ),
         ],
       ),
+      backgroundColor: Color.fromRGBO(222, 255, 222, 1),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -257,6 +259,7 @@ class _StoryDisplayScreenState extends State<StoryDisplayScreen> {
           children: [
             // Story title and metadata
             Card(
+              color: Color.fromARGB(255, 255, 255, 255),
               elevation: 2,
               child: Padding(
                 padding: EdgeInsets.all(16),

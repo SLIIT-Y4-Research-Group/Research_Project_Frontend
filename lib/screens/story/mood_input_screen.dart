@@ -55,6 +55,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
         title: Text('ඔබේ හැඟීම් ඇතුලත් කරන්න'),
         backgroundColor: Color.fromRGBO(113, 212, 131, 1.0),
       ),
+      backgroundColor: Color.fromRGBO(222, 255, 222, 1),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
