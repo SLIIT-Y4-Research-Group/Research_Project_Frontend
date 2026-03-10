@@ -112,6 +112,36 @@ class ApiClient {
     );
   }
 
+  // Store Mood (Child)
+  static Future<http.Response> storeMood({
+    required String mood,
+    required String datetime,
+  }) async {
+    return await http.post(
+      Uri.parse(ApiConfig.STORE_MOOD_ENDPOINT),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode({
+        "mood": mood,
+        "datetime": datetime,
+      }),
+    );
+  }
+
+  // Store Mood (Child)
+  static Future<http.Response> storeMood({
+    required String mood,
+    required String datetime,
+  }) async {
+    return await http.post(
+      Uri.parse(ApiConfig.STORE_MOOD_ENDPOINT),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode({
+        "mood": mood,
+        "datetime": datetime,
+      }),
+    );
+  }
+
   static Future<http.Response> storeMood({
     required String mood,
     required String datetime,
@@ -150,13 +180,7 @@ class ApiClient {
     );
   }
 
-  static Future<http.Response> getParentDrawings() async {
-    return await http.get(
-      Uri.parse('${ApiConfig.BASE_URL}/parent/drawings'),
-      headers: await _getHeaders(includeAuth: true),
-    );
-  }
-
+  // Respond to Alert Permission Request (Child)
   static Future<http.Response> respondAlertPermission({
     required bool approve,
   }) async {
@@ -164,7 +188,7 @@ class ApiClient {
       Uri.parse('${ApiConfig.BASE_URL}/mood/respond_alert_permission'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
-        'approve': approve,
+        "approve": approve,
       }),
     );
   }
