@@ -21,7 +21,6 @@ version: 1.0.0+1
 environment:
   sdk: ^3.10.4
 
-
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -39,11 +38,8 @@ dependencies:
   lottie: ^3.1.0
   path_provider: ^2.1.4
   share_plus: ^12.0.1
-  flutter_animate: ^4.5.0 
+  flutter_animate: ^4.5.0
   http_parser: ^4.0.2
-
-
-
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,13 +54,8 @@ dependencies:
   speech_to_text: ^7.3.0
   permission_handler: ^12.0.1
 
-
-
-
   confetti: ^0.8.0
   google_fonts: ^8.0.2
-
-
 
 dev_dependencies:
   just_audio: ^0.9.36
@@ -90,18 +81,15 @@ flutter:
   uses-material-design: true
 
   assets:
-    
-    - assets/icons/
     - assets/images/logo.png
     - assets/images/
 
     - assets/images/anim_logo.gif
 
-
     - assets/audio/
     - assets/animations/
     - assets/lottie/
-  
+
   fonts:
     - family: Sinhala
       fonts:
@@ -113,9 +101,6 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
- 
-
-
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -156,4 +141,3 @@ flutter_launcher_icons:
   windows:
     generate: true
     image_path: "assets/images/logo.png"
-
