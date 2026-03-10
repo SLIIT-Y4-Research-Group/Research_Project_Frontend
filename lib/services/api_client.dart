@@ -112,6 +112,25 @@ class ApiClient {
     );
   }
 
+<<<<<<< Updated upstream
+=======
+  // Store Mood (Child)
+  static Future<http.Response> storeMood({
+    required String mood,
+    required String datetime,
+  }) async {
+    return await http.post(
+      Uri.parse(ApiConfig.STORE_MOOD_ENDPOINT),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode({
+        "mood": mood,
+        "datetime": datetime,
+      }),
+    );
+  }
+
+  // List Trusted Contacts (Parent)
+>>>>>>> Stashed changes
   static Future<http.Response> getTrustedContacts(String childId) async {
     return await http.get(
       Uri.parse('${ApiConfig.BASE_URL}/parent/children/$childId/trusted'),
@@ -136,6 +155,7 @@ class ApiClient {
     );
   }
 
+<<<<<<< Updated upstream
   static Future<http.Response> getParentDrawings() async {
     return await http.get(
       Uri.parse('${ApiConfig.BASE_URL}/parent/drawings'),
@@ -143,3 +163,18 @@ class ApiClient {
     );
   }
 }
+=======
+  // Respond to Alert Permission Request (Child)
+  static Future<http.Response> respondAlertPermission({
+    required bool approve,
+  }) async {
+    return await http.post(
+      Uri.parse('${ApiConfig.BASE_URL}/mood/respond_alert_permission'),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode({
+        "approve": approve,
+      }),
+    );
+  }
+}
+>>>>>>> Stashed changes

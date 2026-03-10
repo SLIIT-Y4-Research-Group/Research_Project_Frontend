@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -22,11 +23,13 @@ class Question {
   String answer;
   String mood;
   bool loadingMood;
+  bool skipped;
 
   Question(this.text)
       : answer = "",
         mood = "",
-        loadingMood = false;
+        loadingMood = false,
+        skipped = false;
 }
 
 class MoodHome extends StatefulWidget {
@@ -54,6 +57,7 @@ class _MoodHomeState extends State<MoodHome> {
   bool _isChildUser = false;
   bool _alertsConsent = false;
   bool _loadingConsent = false;
+  String _childName = "";
 
   //  Five questions
   late List<Question> questions;
@@ -99,6 +103,7 @@ class _MoodHomeState extends State<MoodHome> {
         final data = jsonDecode(response.body);
         setState(() {
           _alertsConsent = data['alerts_consent'] ?? false;
+          _childName = data['name'] ?? "";
         });
       }
     } catch (e) {
@@ -173,6 +178,159 @@ class _MoodHomeState extends State<MoodHome> {
           ),
         ],
       ),
+    );
+  }
+  
+  Future<void> _showAlertPermissionDialog({required int badMoodCount}) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // Student must respond
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          contentPadding: const EdgeInsets.all(20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Supportive illustration - Hand with love animation
+              Lottie.asset(
+                'assets/lottie/Hand with love.json',
+                height: 110,
+                repeat: true,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 16),
+              
+              // Main message with child's name
+              Text(
+                _childName.isNotEmpty
+                    ? '$_childName, අපිට පේනවා පහුගිය දවස් ටිකේ ඔයා ටිකක් දුකෙන් හිටියා වගේ.'
+                    : 'අපිට පේනවා පහුගිය දවස් ටිකේ ඔයා ටිකක් දුකෙන් හිටියා වගේ.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Supporting text
+              const Text(
+                'ඔයා කැමතිනම්, මේ ගැන ඔයාගේ දෙමව්පියන්ට හරි විශ්වාසවන්ත පුද්ගලයකුට හරි දැනුම් දෙන්න පුළුවන්.\nඑතකොට එයාලට ඔයාට උදව් කරන්න පුළුවන්.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.4,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Permission question
+              const Text(
+                'ඔයා ඒකට අවසර දෙනවද?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'නැහැ, දැන් එපා',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                
+                try {
+                  print("[MOOD] Student declined alert permission");
+                  await ApiClient.respondAlertPermission(approve: false);
+                  print("[MOOD] Decline response sent to backend");
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('හරි, අපි දැනුම්දීමක් එවන්නේ නැහැ'),
+                        duration: Duration(seconds: 2),
+                        backgroundColor: Colors.grey,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print("[MOOD] Error sending decline response: $e");
+                  // Continue anyway - navigation should not break
+                }
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              child: const Text(
+                'ඔව්, දන්වන්න',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                
+                try {
+                  print("[MOOD] Student approved alert permission");
+                  await ApiClient.respondAlertPermission(approve: true);
+                  print("[MOOD] Approval response sent to backend");
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('ඔබේ භාරකරුට දැනුම්දීම යවන ලදී ✓'),
+                        duration: Duration(seconds: 3),
+                        backgroundColor: Color(0xFF22C55E),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print("[MOOD] Error sending approval response: $e");
+                  // Continue anyway - navigation should not break
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('දැනුම්දීම යැවීමේ දෝෂයක්'),
+                        duration: Duration(seconds: 2),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
   
@@ -281,6 +439,7 @@ class _MoodHomeState extends State<MoodHome> {
             
             if (result.finalResult) {
               questions[currentQuestionIndex].answer = _transcriptController.text;
+              questions[currentQuestionIndex].skipped = false;
               _lastRecognizedWords = "";
             }
           }
@@ -296,6 +455,7 @@ class _MoodHomeState extends State<MoodHome> {
       String finalText = _transcriptController.text.trim();
       if (finalText.isNotEmpty) {
         questions[currentQuestionIndex].answer = finalText;
+        questions[currentQuestionIndex].skipped = false;
         liveTranscript = finalText;
       }
     });
@@ -309,6 +469,62 @@ class _MoodHomeState extends State<MoodHome> {
         _transcriptController.text = questions[currentQuestionIndex].answer;
       });
     }
+  }
+
+  void handleSkipQuestion() {
+    // Only allow skipping Q2-Q5 (not Q1)
+    if (currentQuestionIndex == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("පළමු ප්‍රශ්නය මග හැරිය නොහැක. කරුණාකර පිළිතුරු දෙන්න."),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Special handling for Q5 (last question)
+    bool isLastQuestion = currentQuestionIndex == questions.length - 1;
+    
+    if (isLastQuestion) {
+      // Count how many questions are already answered (excluding current Q5)
+      int answeredCount = 0;
+      for (int i = 0; i < questions.length - 1; i++) { // Check Q1-Q4 only
+        if (!questions[i].skipped && questions[i].answer.trim().isNotEmpty) {
+          answeredCount++;
+        }
+      }
+      
+      // Need minimum 3 answers from Q1-Q4 to skip Q5
+      if (answeredCount < 3) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("අවසාන ප්‍රශ්නය මග හැරීමට, අවම වශයෙන් පළමු ප්‍රශ්න 3කට පිළිතුරු දෙන්න."),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      // If 3+ answers exist, skip Q5 and submit directly
+      setState(() {
+        questions[currentQuestionIndex].skipped = true;
+        questions[currentQuestionIndex].answer = "";
+        questions[currentQuestionIndex].mood = "";
+      });
+      submitAllAnswers();
+      return;
+    }
+
+    // For Q2-Q4: normal skip behavior (skip and go to next question)
+    setState(() {
+      questions[currentQuestionIndex].skipped = true;
+      questions[currentQuestionIndex].answer = "";
+      questions[currentQuestionIndex].mood = "";
+    });
+    nextQuestion();
   }
 
   void previousQuestion() {
@@ -325,6 +541,7 @@ class _MoodHomeState extends State<MoodHome> {
     setState(() {
       questions[currentQuestionIndex].answer = "";
       questions[currentQuestionIndex].mood = "";
+      questions[currentQuestionIndex].skipped = false;
       liveTranscript = "";
       _transcriptController.clear();
     });
@@ -634,6 +851,7 @@ class _MoodHomeState extends State<MoodHome> {
       setState(() {
         if (validation.normalized.isNotEmpty) {
           questions[currentQuestionIndex].answer = validation.normalized;
+          questions[currentQuestionIndex].skipped = false;
         }
         questions[currentQuestionIndex].mood = mood;
       });
@@ -659,6 +877,7 @@ class _MoodHomeState extends State<MoodHome> {
       setState(() {
         if (validation.normalized.isNotEmpty) {
           questions[currentQuestionIndex].answer = validation.normalized;
+          questions[currentQuestionIndex].skipped = false;
         }
         questions[currentQuestionIndex].mood = moodLabel;
       });
@@ -720,14 +939,64 @@ class _MoodHomeState extends State<MoodHome> {
   }
 
   Future<void> submitAllAnswers() async {
+  // Validate minimum requirements before submission
+  // Q1 must be answered
+  if (questions[0].answer.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("කරුණාකර පළමු ප්‍රශ්නයට පිළිතුරු දෙන්න."),
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  // Count answered questions (not skipped and not empty)
+  int answeredCount = 0;
+  for (int i = 0; i < questions.length; i++) {
+    if (!questions[i].skipped && questions[i].answer.trim().isNotEmpty) {
+      answeredCount++;
+    }
+  }
+  
+  print("[SUBMIT] Answered count: $answeredCount");
+  for (int i = 0; i < questions.length; i++) {
+    print("  Q${i+1}: skipped=${questions[i].skipped}, answer='${questions[i].answer.trim()}' (${questions[i].answer.trim().length} chars)");
+  }
+
+  // Minimum 3 questions must be answered (Q1 + 2 more)
+  if (answeredCount < 3) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("අවසාන ප්‍රතිඵලය ලබාගන්න, පළමු ප්‍රශ්නයට සහ තවත් ප්‍රශ්න 2කටවත් පිළිතුරු දෙන්න."),
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
   // Build answers list with YES/NO conversion
+  // Send exactly 5 answers, empty string for skipped
   final answers = <String>[];
   
   for (int i = 0; i < questions.length; i++) {
-    final answer = questions[i].answer.trim();
-    if (answer.isEmpty) continue;
+    final questionId = i + 1;
     
-    final questionId = i + 1; // Convert to 1-5
+    // If skipped, send empty string
+    if (questions[i].skipped) {
+      answers.add("");
+      continue;
+    }
+    
+    final answer = questions[i].answer.trim();
+    
+    // If somehow empty (shouldn't happen due to validation above), send empty
+    if (answer.isEmpty) {
+      answers.add("");
+      continue;
+    }
     
     // Q1: always use the real answer
     if (questionId == 1) {
@@ -743,14 +1012,11 @@ class _MoodHomeState extends State<MoodHome> {
     }
   }
 
-  if (answers.isEmpty) {
-    setState(() => mood = "කරුණාකර අවම වශයෙන් එක් ප්‍රශ්නයකට පිළිතුරු දෙන්න");
-    return;
-  }
-
   setState(() => loadingMood = true);
 
   try {
+    print("[MOOD] Starting mood prediction...");
+    
     final res = await http.post(
       Uri.parse(overallUrl),
       headers: {"Content-Type": "application/json"},
@@ -761,8 +1027,65 @@ class _MoodHomeState extends State<MoodHome> {
       final data = jsonDecode(res.body);
       final finalMood = data["final_mood"]?.toString() ?? "";
       
+      print("[MOOD] Prediction received: $finalMood");
+      
       // Wait for minimum 3 seconds to show the loading animation
       await Future.delayed(const Duration(seconds: 3));
+      
+      // After successful prediction, store the mood to backend
+      try {
+        print("[MOOD] Attempting to store mood to backend...");
+        
+        final storageRes = await ApiClient.storeMood(
+          mood: finalMood,
+          datetime: DateTime.now().toIso8601String(),
+        );
+        
+        if (storageRes.statusCode == 200 || storageRes.statusCode == 201) {
+          print("[MOOD] Mood stored successfully to backend");
+          
+          // Check if alert permission is needed
+          try {
+            final storageData = jsonDecode(storageRes.body);
+            if (storageData["alert_permission_needed"] == true) {
+              final badMoodCount = storageData["bad_mood_count"] ?? 5;
+              print("[MOOD] Alert permission needed - showing dialog (bad mood count: $badMoodCount)");
+              
+              // Show permission dialog before navigating to result screen
+              await _showAlertPermissionDialog(badMoodCount: badMoodCount);
+            } else {
+              print("[MOOD] No alert permission needed");
+            }
+          } catch (parseError) {
+            print("[MOOD] Could not parse storage response for alert check: $parseError");
+            // Continue normal flow if parsing fails
+          }
+        } else {
+          print("[MOOD] Failed to store mood: ${storageRes.statusCode} - ${storageRes.body}");
+          // Show warning but continue to result screen
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("මනෝභාවය අනාවරණය විය, නමුත් සුරැකීම අසාර්ථක විය"),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      } catch (storageError) {
+        print("[MOOD] Error storing mood: $storageError");
+        // Show warning but continue to result screen
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("මනෝභාවය අනාවරණය විය, නමුත් සුරැකීම අසාර්ථක විය"),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
       
       setState(() => loadingMood = false);
       
@@ -782,6 +1105,7 @@ class _MoodHomeState extends State<MoodHome> {
       });
     }
   } catch (e) {
+    print("[MOOD] Connection error: $e");
     setState(() {
       mood = "Connection Error\n$e\n\nTroubleshooting:\n✓ Backend running on ${ApiConfig.BASE_URL}?\n✓ Phone & PC on same WiFi?\n✓ Try ${ApiConfig.BASE_URL}/docs in browser";
     });
@@ -876,6 +1200,7 @@ class _MoodHomeState extends State<MoodHome> {
       setState(() {
         if (validation.normalized.isNotEmpty) {
           questions[currentQuestionIndex].answer = validation.normalized;
+          questions[currentQuestionIndex].skipped = false;
         }
         questions[currentQuestionIndex].mood = mood;
       });
@@ -901,6 +1226,7 @@ class _MoodHomeState extends State<MoodHome> {
       setState(() {
         if (validation.normalized.isNotEmpty) {
           questions[currentQuestionIndex].answer = validation.normalized;
+          questions[currentQuestionIndex].skipped = false;
         }
         questions[currentQuestionIndex].mood = moodLabel;
       });
@@ -1296,6 +1622,26 @@ Widget build(BuildContext context) {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18),
                               ),
+                            ),
+                          ),
+                        ),
+                      if (currentQuestionIndex > 0) const SizedBox(width: 12),
+                      // Skip button for Q2-Q5 only (not Q1)
+                      if (currentQuestionIndex > 0)
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: listening ? null : handleSkipQuestion,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.all(14),
+                              foregroundColor: Colors.grey[600],
+                              side: BorderSide(color: Colors.grey[400]!),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            child: const Text(
+                              "මග හරින්න",
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),
