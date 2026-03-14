@@ -8,13 +8,13 @@ import '../../core/story/story_constants.dart';
 class MoodInputScreen extends StatefulWidget {
   final Future<void> Function(MoodProfile) onGenerateStory;
   final MoodProfile? initialMood;
-
+  
   const MoodInputScreen({
     Key? key,
     required this.onGenerateStory,
     this.initialMood,
   }) : super(key: key);
-
+  
   @override
   _MoodInputScreenState createState() => _MoodInputScreenState();
 }
@@ -24,13 +24,12 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
   String? _selectedWeather;
   String? _selectedCharacter;
   String? _selectedStarterSentence;
-  final TextEditingController _customStarterController =
-      TextEditingController();
+  final TextEditingController _customStarterController = TextEditingController();
   bool _isCustomStarter = false;
-
+  
   // Common story starters that match the Python backend
   final List<String> _defaultStarters = StoryConstants.commonStarters;
-
+  
   @override
   void initState() {
     super.initState();
@@ -39,15 +38,15 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
       _selectedWeather = widget.initialMood!.weather;
       _selectedCharacter = widget.initialMood!.character;
       _selectedStarterSentence = widget.initialMood!.starterSentence;
-
-      if (_selectedStarterSentence != null &&
+      
+      if (_selectedStarterSentence != null && 
           !_defaultStarters.contains(_selectedStarterSentence)) {
         _customStarterController.text = _selectedStarterSentence!;
         _isCustomStarter = true;
       }
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,7 +54,6 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
         title: Text('ඔබේ හැඟීම් ඇතුලත් කරන්න'),
         backgroundColor: Color.fromRGBO(113, 212, 131, 1.0),
       ),
-      backgroundColor: Color.fromRGBO(222, 255, 222, 1),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -64,7 +62,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
             // Step indicator
             _buildStepIndicator(),
             SizedBox(height: 20),
-
+            
             // Mood Wheel
             MoodWheelWidget(
               onMoodSelected: (mood) {
@@ -74,9 +72,9 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               },
               initialMood: _selectedMood,
             ),
-
+            
             SizedBox(height: 30),
-
+            
             // Weather Picker
             WeatherPickerWidget(
               onWeatherSelected: (weather) {
@@ -86,9 +84,9 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               },
               initialWeather: _selectedWeather,
             ),
-
+            
             SizedBox(height: 30),
-
+            
             // Character Picker
             CharacterPickerWidget(
               onCharacterSelected: (character) {
@@ -98,37 +96,31 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               },
               initialCharacter: _selectedCharacter,
             ),
-
+            
             SizedBox(height: 30),
-
+            
             // Story Starter (Optional)
             _buildStoryStarterSection(),
-
+            
             SizedBox(height: 40),
-
+            
             // Generate Button
             ElevatedButton(
-              onPressed: _canGenerate()
-                  ? () {
-                      print(
-                        '[DEBUG] Generate button pressed in MoodInputScreen',
-                      );
-
-                      final moodProfile = MoodProfile(
-                        mood: _selectedMood!,
-                        weather: _selectedWeather!,
-                        character: _selectedCharacter!,
-                        starterSentence: _selectedStarterSentence,
-                      );
-
-                      print(
-                        '[DEBUG] Calling onGenerateStory callback with: $moodProfile',
-                      );
-
-                      // Call the callback which should handle navigation
-                      widget.onGenerateStory(moodProfile);
-                    }
-                  : null,
+              onPressed: _canGenerate() ? () {
+                print('[DEBUG] Generate button pressed in MoodInputScreen');
+                
+                final moodProfile = MoodProfile(
+                  mood: _selectedMood!,
+                  weather: _selectedWeather!,
+                  character: _selectedCharacter!,
+                  starterSentence: _selectedStarterSentence,
+                );
+                
+                print('[DEBUG] Calling onGenerateStory callback with: $moodProfile');
+                
+                // Call the callback which should handle navigation
+                widget.onGenerateStory(moodProfile);
+              } : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromRGBO(113, 212, 131, 1.0),
                 foregroundColor: Colors.white,
@@ -143,24 +135,22 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
-
+            
             SizedBox(height: 20),
-
+            
             // Preview Card
-            if (_selectedMood != null &&
-                _selectedWeather != null &&
-                _selectedCharacter != null)
+            if (_selectedMood != null && _selectedWeather != null && _selectedCharacter != null)
               _buildPreviewCard(),
           ],
         ),
       ),
     );
   }
-
+  
   Widget _buildStepIndicator() {
     final steps = ['මනස', 'කාලගුණය', 'චරිතය', 'කථාව'];
     final currentStep = _getCurrentStep();
-
+    
     return Column(
       children: [
         Row(
@@ -170,16 +160,14 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
             final step = entry.value;
             final isActive = index <= currentStep;
             final isCompleted = index < currentStep;
-
+            
             return Column(
               children: [
                 Container(
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? Color.fromRGBO(113, 212, 131, 1.0)
-                        : Colors.grey[300],
+                    color: isActive ? Color.fromRGBO(113, 212, 131, 1.0) : Colors.grey[300],
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -199,9 +187,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                   step,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isActive
-                        ? Color.fromRGBO(113, 212, 131, 1.0)
-                        : Colors.grey[600],
+                    color: isActive ? Color.fromRGBO(113, 212, 131, 1.0) : Colors.grey[600],
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
@@ -218,18 +204,20 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
       ],
     );
   }
-
+  
   int _getCurrentStep() {
     if (_selectedMood == null) return 0;
     if (_selectedWeather == null) return 1;
     if (_selectedCharacter == null) return 2;
     return 3;
   }
-
+  
   Widget _buildStoryStarterSection() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -244,24 +232,23 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               ),
             ),
             SizedBox(height: 12),
-
+            
             // Default starters
             Column(
               children: _defaultStarters.map((starter) {
-                final isSelected =
-                    !_isCustomStarter && _selectedStarterSentence == starter;
-
+                final isSelected = !_isCustomStarter && _selectedStarterSentence == starter;
+                
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 4),
                   color: isSelected ? Colors.deepPurple[50] : Colors.white,
                   child: ListTile(
                     title: Text(
                       starter,
-                      style: TextStyle(fontFamily: 'NotoSansSinhala'),
+                      style: TextStyle(
+                        fontFamily: 'NotoSansSinhala',
+                      ),
                     ),
-                    trailing: isSelected
-                        ? Icon(Icons.check, color: Colors.deepPurple)
-                        : null,
+                    trailing: isSelected ? Icon(Icons.check, color: Colors.deepPurple) : null,
                     onTap: () {
                       setState(() {
                         _selectedStarterSentence = starter;
@@ -273,9 +260,9 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                 );
               }).toList(),
             ),
-
+            
             SizedBox(height: 16),
-
+            
             // Custom starter option
             ListTile(
               leading: Checkbox(
@@ -292,7 +279,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               ),
               title: Text('ඔබේම වාක්‍යයක් ලියන්න'),
             ),
-
+            
             if (_isCustomStarter)
               Padding(
                 padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
@@ -310,14 +297,12 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                   ),
                   onChanged: (value) {
                     setState(() {
-                      _selectedStarterSentence = value.isNotEmpty
-                          ? value
-                          : null;
+                      _selectedStarterSentence = value.isNotEmpty ? value : null;
                     });
                   },
                 ),
               ),
-
+            
             // No starter option
             ListTile(
               leading: Checkbox(
@@ -334,10 +319,9 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               ),
               title: Text('කිසිදු වාක්‍ය ඛණ්ඩයක් අවශ්‍ය නැත'),
             ),
-
+            
             // Info text about traditional starters
-            if (_selectedStarterSentence != null &&
-                _defaultStarters.contains(_selectedStarterSentence))
+            if (_selectedStarterSentence != null && _defaultStarters.contains(_selectedStarterSentence))
               Padding(
                 padding: EdgeInsets.only(top: 12),
                 child: Container(
@@ -349,11 +333,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.amber[800],
-                        size: 16,
-                      ),
+                      Icon(Icons.info_outline, color: Colors.amber[800], size: 16),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -373,7 +353,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
       ),
     );
   }
-
+  
   Widget _buildPreviewCard() {
     return Card(
       color: Colors.deepPurple[50],
@@ -397,29 +377,22 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
               children: [
                 _buildPreviewChip(
                   icon: Icons.mood,
-                  label:
-                      StoryConstants.moodSinhala[_selectedMood] ??
-                      _selectedMood!,
+                  label: StoryConstants.moodSinhala[_selectedMood] ?? _selectedMood!,
                   color: Colors.blue,
                 ),
                 _buildPreviewChip(
                   icon: Icons.cloud,
-                  label:
-                      StoryConstants.weatherSinhala[_selectedWeather] ??
-                      _selectedWeather!,
+                  label: StoryConstants.weatherSinhala[_selectedWeather] ?? _selectedWeather!,
                   color: Colors.green,
                 ),
                 _buildPreviewChip(
                   icon: Icons.person,
-                  label:
-                      StoryConstants.characterSinhala[_selectedCharacter] ??
-                      _selectedCharacter!,
+                  label: StoryConstants.characterSinhala[_selectedCharacter] ?? _selectedCharacter!,
                   color: Colors.orange,
                 ),
               ],
             ),
-            if (_selectedStarterSentence != null &&
-                _selectedStarterSentence!.isNotEmpty)
+            if (_selectedStarterSentence != null && _selectedStarterSentence!.isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(top: 12),
                 child: Column(
@@ -454,7 +427,7 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
       ),
     );
   }
-
+  
   Widget _buildPreviewChip({
     required IconData icon,
     required String label,
@@ -474,13 +447,13 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
       padding: EdgeInsets.symmetric(horizontal: 8),
     );
   }
-
+  
   bool _canGenerate() {
-    return _selectedMood != null &&
-        _selectedWeather != null &&
-        _selectedCharacter != null;
+    return _selectedMood != null && 
+           _selectedWeather != null && 
+           _selectedCharacter != null;
   }
-
+  
   @override
   void dispose() {
     _customStarterController.dispose();
@@ -492,53 +465,53 @@ class _MoodInputScreenState extends State<MoodInputScreen> {
 class WeatherPickerWidget extends StatefulWidget {
   final Function(String) onWeatherSelected;
   final String? initialWeather;
-
+  
   const WeatherPickerWidget({
     Key? key,
     required this.onWeatherSelected,
     this.initialWeather,
   }) : super(key: key);
-
+  
   @override
   _WeatherPickerWidgetState createState() => _WeatherPickerWidgetState();
 }
 
 class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
   String? _selectedWeather;
-
+  
   final Map<String, Map<String, dynamic>> _weatherData = {
     'sunny': {
       'emoji': '☀️',
       'color': Colors.orange,
       'sinhala': 'සූර්යාලෝක',
-      'description': 'සාමකාමී, ප්රීතිමත්',
+      'description': 'සාමකාමී, ප්රීතිමත්'
     },
     'rainy': {
       'emoji': '🌧️',
       'color': Colors.blue,
       'sinhala': 'වර්ෂාව',
-      'description': 'දුක්ඛිත, පරාවර්තක',
+      'description': 'දුක්ඛිත, පරාවර්තක'
     },
     'stormy': {
       'emoji': '⛈️',
       'color': Colors.indigo,
       'sinhala': 'කුණාටුව',
-      'description': 'අධික ලෙස, කෝපයෙන්',
+      'description': 'අධික ලෙස, කෝපයෙන්'
     },
     'foggy': {
       'emoji': '🌫️',
       'color': Colors.grey,
       'sinhala': 'මීදුම',
-      'description': 'ව්‍යාකූල, උදාසීන',
+      'description': 'ව්‍යාකූල, උදාසීන'
     },
   };
-
+  
   @override
   void initState() {
     super.initState();
     _selectedWeather = widget.initialWeather;
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -564,7 +537,7 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
             final weather = entry.key;
             final data = entry.value;
             final isSelected = _selectedWeather == weather;
-
+            
             return GestureDetector(
               onTap: () {
                 setState(() {
@@ -574,34 +547,33 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? data['color'].withOpacity(0.2)
-                      : Colors.white,
+                  color: isSelected ? data['color'].withOpacity(0.2) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected ? data['color'] : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: data['color'].withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            blurRadius: 2,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: data['color'].withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    )
+                  ] : [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    )
+                  ],
                 ),
                 padding: EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    Text(data['emoji'], style: TextStyle(fontSize: 28)),
+                    Text(
+                      data['emoji'],
+                      style: TextStyle(fontSize: 28),
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -613,9 +585,7 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? data['color']
-                                  : Colors.grey[800],
+                              color: isSelected ? data['color'] : Colors.grey[800],
                             ),
                           ),
                           SizedBox(height: 2),
@@ -623,9 +593,7 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
                             data['description'],
                             style: TextStyle(
                               fontSize: 11,
-                              color: isSelected
-                                  ? data['color'].withOpacity(0.8)
-                                  : Colors.grey[600],
+                              color: isSelected ? data['color'].withOpacity(0.8) : Colors.grey[600],
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -650,47 +618,44 @@ class _WeatherPickerWidgetState extends State<WeatherPickerWidget> {
 class CharacterPickerWidget extends StatefulWidget {
   final Function(String) onCharacterSelected;
   final String? initialCharacter;
-
+  
   const CharacterPickerWidget({
     Key? key,
     required this.onCharacterSelected,
     this.initialCharacter,
   }) : super(key: key);
-
+  
   @override
   _CharacterPickerWidgetState createState() => _CharacterPickerWidgetState();
 }
 
 class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
   String? _selectedCharacter;
-
+  
   final Map<String, Map<String, dynamic>> _characterData = {
     'hare': {
-      'emoji': '🐦',
       'sinhala': 'කුරුල්ලා',
       'description': 'කනස්සල්ලෙන් නමුත් දක්ෂයි',
       'color': Colors.brown,
     },
     'lion': {
-      'emoji': '🦁',
       'sinhala': 'සිංහයා',
       'description': 'ශක්තිමත් නමුත් තනිකම',
       'color': Colors.orange,
     },
     'elephant': {
-      'emoji': '🐘',
       'sinhala': 'අලියා',
       'description': 'කරුණාවන්ත නමුත් බර හදවතක් උසුලයි',
       'color': Colors.grey,
     },
   };
-
+  
   @override
   void initState() {
     super.initState();
     _selectedCharacter = widget.initialCharacter;
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -714,7 +679,7 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
             final character = _characterData.keys.elementAt(index);
             final data = _characterData[character]!;
             final isSelected = _selectedCharacter == character;
-
+            
             return GestureDetector(
               onTap: () {
                 setState(() {
@@ -724,29 +689,25 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? data['color'].withOpacity(0.1)
-                      : Colors.white,
+                  color: isSelected ? data['color'].withOpacity(0.1) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected ? data['color'] : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: data['color'].withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.05),
-                            blurRadius: 2,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: data['color'].withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    )
+                  ] : [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.05),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    )
+                  ],
                 ),
                 padding: EdgeInsets.all(16),
                 child: Row(
@@ -755,7 +716,7 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
                       backgroundColor: data['color'].withOpacity(0.2),
                       radius: 24,
                       child: Text(
-                        data['emoji'],
+                        data['sinhala'].substring(0, 1),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -773,9 +734,7 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? data['color']
-                                  : Colors.grey[800],
+                              color: isSelected ? data['color'] : Colors.grey[800],
                             ),
                           ),
                           SizedBox(height: 4),
@@ -783,9 +742,7 @@ class _CharacterPickerWidgetState extends State<CharacterPickerWidget> {
                             data['description'],
                             style: TextStyle(
                               fontSize: 13,
-                              color: isSelected
-                                  ? data['color'].withOpacity(0.8)
-                                  : Colors.grey[600],
+                              color: isSelected ? data['color'].withOpacity(0.8) : Colors.grey[600],
                             ),
                           ),
                         ],

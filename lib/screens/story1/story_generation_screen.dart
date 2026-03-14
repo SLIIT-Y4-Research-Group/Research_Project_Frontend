@@ -7,8 +7,10 @@ import '../../models/story/story_model.dart';
 class SimpleGenerationScreen extends StatefulWidget {
   final MoodProfile moodProfile;
 
-  const SimpleGenerationScreen({Key? key, required this.moodProfile})
-    : super(key: key);
+  const SimpleGenerationScreen({
+    Key? key,
+    required this.moodProfile,
+  }) : super(key: key);
 
   @override
   _SimpleGenerationScreenState createState() => _SimpleGenerationScreenState();
@@ -24,7 +26,7 @@ class _SimpleGenerationScreenState extends State<SimpleGenerationScreen> {
 
   Future<void> _startGeneration() async {
     print('[DEBUG] Starting story generation...');
-
+    
     try {
       final aiService = AIStoryService();
       final response = await aiService.generateStory(
@@ -36,7 +38,7 @@ class _SimpleGenerationScreenState extends State<SimpleGenerationScreen> {
       );
 
       print('[DEBUG] Generation response: ${response.success}');
-
+      
       if (!mounted) return;
 
       if (!response.success) {
@@ -46,7 +48,7 @@ class _SimpleGenerationScreenState extends State<SimpleGenerationScreen> {
 
       final storyData = response.data!;
       print('[DEBUG] Story data received: $storyData');
-
+      
       // Handle different response formats
       String storyContent = 'කථාව නිර්මාණය කරන ලදී';
       if (storyData['story'] is String) {
@@ -69,23 +71,22 @@ class _SimpleGenerationScreenState extends State<SimpleGenerationScreen> {
         likeCount: 0,
         // readingTime: _calculateReadingTime(storyContent),
         isPublic: false,
-        tags: [
-          'ai-generated',
-          widget.moodProfile.mood,
-          widget.moodProfile.character,
-        ],
+        tags: ['ai-generated', widget.moodProfile.mood, widget.moodProfile.character],
       );
 
       print('[DEBUG] Story created, navigating to display...');
-
+      
       // Navigate to story display
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              StoryDisplayScreen(story: story, isNewStory: true),
+          builder: (context) => StoryDisplayScreen(
+            story: story,
+            isNewStory: true,
+          ),
         ),
       );
+
     } catch (e) {
       print('[ERROR] Generation error: $e');
       if (mounted) {
@@ -100,7 +101,7 @@ class _SimpleGenerationScreenState extends State<SimpleGenerationScreen> {
       'lion': 'සිංහයා',
       'elephant': 'අලියා',
     };
-
+    
     final moodNames = {
       'sad': 'දුක් සහගත',
       'happy': 'සතුටු',
@@ -149,56 +150,29 @@ class _SimpleGenerationScreenState extends State<SimpleGenerationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('කථාව නිර්මාණය වෙමින්...'),
-        backgroundColor: Color.fromRGBO(113, 212, 131, 1.0), // optional green
       ),
-      body: Stack(
-        children: [
-          // Background image
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                  'images/storyload.jpg',
-                ), // put your image path here
-                fit: BoxFit.cover,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 20),
+            Text(
+              'කථාව නිර්මාණය වෙමින්...',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'කරුණාකර රැඳී සිටින්න. මෙය තත්පර කිහිපයක් ගතවනු ඇත.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
               ),
             ),
-          ),
-
-          // Centered loading content
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromRGBO(113, 212, 131, 1.0),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'කථාව නිර්මාණය වෙමින්...',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    'කරුණාකර රැඳී සිටින්න. මෙය තත්පර කිහිපයක් ගතවනු ඇත.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
 }

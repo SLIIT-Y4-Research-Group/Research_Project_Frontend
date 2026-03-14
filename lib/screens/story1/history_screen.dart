@@ -5,7 +5,6 @@ import '../../models/story/story_model.dart';
 import 'story_display_screen.dart';
 import '../../services/story/local_story_storage.dart';
 import '../../models/story/story_model.dart';
-import '../../widgets/story/mood_wheel.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -251,13 +250,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('මගේ කථා'),
-        backgroundColor: Color.fromARGB(255, 113, 212, 131),
         actions: [
-          // IconButton(
-          //   icon: Icon(Icons.filter_list),
-          //   onPressed: _showFilterSheet,
-          //   tooltip: 'පෙරහන',
-          // ),
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: _showFilterSheet,
+            tooltip: 'පෙරහන',
+          ),
           IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _loadStories,
@@ -265,76 +263,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
-      body: Stack(
-      children: [
-        // Background image
-        Container(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('images/storyHistory.jpg'), // Put your image path here
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-
-        // Content
-        _isLoading
-            ? Center(child: CircularProgressIndicator())
-            : filteredStories.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.auto_stories,
-                          size: 80,
-                          color: const Color.fromARGB(255, 255, 255, 255),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : filteredStories.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.auto_stories,
+                        size: 80,
+                        color: Colors.grey[400],
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        'කිසිදු කථාවක් නැත',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey[600],
                         ),
-                        SizedBox(height: 20),
-                        Text(
-                          'කිසිදු කථාවක් නැත',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'පළමු කථාව නිර්මාණය කරන්න',
-                          style: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
-                        ),
-                        SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Go back to home
-                          },
-                          child: Text('නව කථාවක්'),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadStories,
-                    child: ListView.builder(
-                      padding: EdgeInsets.all(8),
-                      itemCount: filteredStories.length,
-                      itemBuilder: (context, index) {
-                        final story = filteredStories[index];
-                        return _buildStoryCard(story);
-                      },
-                    ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'පළමු කථාව නිර්මාණය කරන්න',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Go back to home
+                        },
+                        child: Text('නව කථාවක්'),
+                      ),
+                    ],
                   ),
-      ],
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        Navigator.pop(context); // Go back to home to create new story
-      },
-      backgroundColor: Color.fromARGB(255, 255, 255, 255),
-      child: Icon(Icons.add, color: Color.fromARGB(255, 113, 212, 131)),
-    ),
-  );
-}
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadStories,
+                  child: ListView.builder(
+                    padding: EdgeInsets.all(8),
+                    itemCount: filteredStories.length,
+                    itemBuilder: (context, index) {
+                      final story = filteredStories[index];
+                      return _buildStoryCard(story);
+                    },
+                  ),
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pop(context); // Go back to home to create new story
+        },
+        backgroundColor: Colors.deepPurple,
+        child: Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
   
   Widget _buildStoryCard(Story story) {
     return Card(
@@ -432,26 +415,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
             ),
-            // PopupMenuItem(
-            //   value: 'edit',
-            //   child: Row(
-            //     children: [
-            //       Icon(Icons.edit, size: 20),
-            //       SizedBox(width: 8),
-            //       Text('සංස්කරණය කරන්න'),
-            //     ],
-            //   ),
-            // ),
-            // PopupMenuItem(
-            //   value: 'share',
-            //   child: Row(
-            //     children: [
-            //       Icon(Icons.share, size: 20),
-            //       SizedBox(width: 8),
-            //       Text('බෙදාගන්න'),
-            //     ],
-            //   ),
-            // ),
+            PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 20),
+                  SizedBox(width: 8),
+                  Text('සංස්කරණය කරන්න'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'share',
+              child: Row(
+                children: [
+                  Icon(Icons.share, size: 20),
+                  SizedBox(width: 8),
+                  Text('බෙදාගන්න'),
+                ],
+              ),
+            ),
             PopupMenuItem(
               value: 'delete',
               child: Row(

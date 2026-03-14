@@ -1,9 +1,17 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'scan_screen.dart'; // Import the ScanScreen
 import 'mood_intro_screen.dart'; // Import mood intro screen
+import '../services/api_client.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
@@ -88,14 +96,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MoodIntroScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: () => _handleMoodCheck(),
                       icon: const Icon(Icons.play_arrow, size: 20),
                       label: const Text(
                         'Start Mood Check',
@@ -337,5 +338,51 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleMoodCheck() async {
+    try {
+      // Check if already completed today
+      final response = await ApiClient.getTodayMoodStatus();
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final bool todayCompleted = data['completed'] ?? false;
+        
+        if (todayCompleted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+      }
+      
+      // Not completed - proceed to intro
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MoodIntroScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      print('[HOME] Error checking mood status: $e');
+      // Failsafe: allow navigation if check fails
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MoodIntroScreen(),
+          ),
+        );
+      }
+    }
   }
 }
