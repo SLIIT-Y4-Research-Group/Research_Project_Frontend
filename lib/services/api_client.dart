@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'auth_service.dart';
@@ -33,25 +34,55 @@ class ApiClient {
   }
 
   static Future<http.Response> loginParent(String email, String password) async {
-    return await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/auth/parent/login'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+    final url = '${ApiConfig.baseUrl}/auth/parent/login';
+    final requestBody = jsonEncode({
+      'email': email,
+      'password': password,
+    });
+    final headers = await _getHeaders();
+
+    debugPrint('[AUTH][PARENT LOGIN] URL: $url');
+    debugPrint('[AUTH][PARENT LOGIN] Body: $requestBody');
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: requestBody,
+      );
+      debugPrint('[AUTH][PARENT LOGIN] Status: ${response.statusCode}');
+      debugPrint('[AUTH][PARENT LOGIN] Response: ${response.body}');
+      return response;
+    } catch (e) {
+      debugPrint('[AUTH][PARENT LOGIN] Exception: $e');
+      rethrow;
+    }
   }
 
   static Future<http.Response> loginChild(String username, String password) async {
-    return await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/auth/child/login'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-      }),
-    );
+    final url = '${ApiConfig.baseUrl}/auth/child/login';
+    final requestBody = jsonEncode({
+      'username': username,
+      'password': password,
+    });
+    final headers = await _getHeaders();
+
+    debugPrint('[AUTH][CHILD LOGIN] URL: $url');
+    debugPrint('[AUTH][CHILD LOGIN] Body: $requestBody');
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: requestBody,
+      );
+      debugPrint('[AUTH][CHILD LOGIN] Status: ${response.statusCode}');
+      debugPrint('[AUTH][CHILD LOGIN] Response: ${response.body}');
+      return response;
+    } catch (e) {
+      debugPrint('[AUTH][CHILD LOGIN] Exception: $e');
+      rethrow;
+    }
   }
 
   static Future<http.Response> getChildren() async {

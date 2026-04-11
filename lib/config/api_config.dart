@@ -1,9 +1,10 @@
 class ApiConfig {
   // ================= COMPANY EMOTION API =================
   // Backend API Base URL
-  // Local dev: http://localhost:8000
-  // Mobile device: http://YOUR_PC_IP:8000
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.180.12:8000',
+  );
 
   static const String emotionPredictImage = '$baseUrl/emotion/predict-image';
   static const String emotionUpload = '$baseUrl/emotion/upload';

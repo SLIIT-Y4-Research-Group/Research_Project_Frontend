@@ -1,8 +1,9 @@
 class AppConfig {
-  // static const String baseUrl = 'http://localhost:8000';
-static const String baseUrl = 'http://127.0.0.1:8000'; 
-  
-  
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.180.12:8000',
+  );
+
   // API Endpoints
   static const String apiBase = '$baseUrl';
   static const String storiesEndpoint = '$apiBase/stories';
