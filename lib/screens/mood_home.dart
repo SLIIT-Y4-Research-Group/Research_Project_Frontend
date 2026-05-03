@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -414,6 +414,91 @@ class _MoodHomeState extends State<MoodHome> {
     _speechWatchdogTimer = null;
   }
 
+  Future<String?> _resolveSpeechLocaleId() async {
+    try {
+      final locales = await speech.locales();
+      if (locales.isEmpty) return null;
+
+      final exact = locales.where((l) => l.localeId == "si_LK").toList();
+      if (exact.isNotEmpty) {
+        return exact.first.localeId;
+      }
+
+      final exactDash = locales.where((l) => l.localeId == "si-LK").toList();
+      if (exactDash.isNotEmpty) {
+        return exactDash.first.localeId;
+      }
+
+      final fallback = locales.where((l) {
+        final id = l.localeId.toLowerCase();
+        return id.contains("si");
+      }).toList();
+
+      if (fallback.isNotEmpty) {
+        return fallback.first.localeId;
+      }
+    } catch (e) {
+      debugPrint("Speech locale lookup error: $e");
+    }
+
+    return null;
+  }
+
+  Future<bool> _tryStartListening(
+    String? localeId, {
+    required Duration pauseFor,
+    required Duration listenFor,
+  }) async {
+    try {
+      await speech.listen(
+        localeId: localeId,
+        listenMode: stt.ListenMode.dictation,
+        partialResults: true,
+        cancelOnError: false,
+        pauseFor: pauseFor,
+        listenFor: listenFor,
+        onResult: (result) {
+          _lastSpeechResultAt = DateTime.now();
+
+          final recognized = result.recognizedWords.trim();
+          if (recognized.isEmpty) return;
+
+          if (result.finalResult) {
+            final currentDisplay = _buildCombinedTranscript();
+
+            if (_accumulatedTranscript.isEmpty) {
+              _accumulatedTranscript = recognized;
+            } else if (recognized.startsWith(_accumulatedTranscript)) {
+              _accumulatedTranscript = recognized;
+            } else if (currentDisplay.startsWith(_accumulatedTranscript) &&
+                recognized.startsWith(_currentPartialTranscript)) {
+              _accumulatedTranscript = currentDisplay;
+            } else if (!_accumulatedTranscript.endsWith(recognized)) {
+              _accumulatedTranscript = "$_accumulatedTranscript $recognized".trim();
+            }
+
+            _finalTranscript = _accumulatedTranscript;
+            _currentPartialTranscript = "";
+          } else {
+            _currentPartialTranscript = recognized;
+          }
+
+          final displayText = _buildCombinedTranscript();
+
+          if (mounted) {
+            setState(() {
+              _syncTranscriptToUi(displayText);
+            });
+          }
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint("Speech listen error (localeId: $localeId): $e");
+      return false;
+    }
+  }
+
   Future<void> _safeRestartListening() async {
     if (_isRestartingSafely || _manuallyStopped || !mounted) return;
 
@@ -479,6 +564,16 @@ class _MoodHomeState extends State<MoodHome> {
             return;
           }
 
+          if (!listening || !mounted) {
+            debugPrint("Speech auto-stop ignored (listening=$listening)");
+            return;
+          }
+
+          if (!_isRestartingSafely) {
+            debugPrint("Speech auto-stop detected, restarting...");
+          }
+
+          await Future.delayed(const Duration(milliseconds: 400));
           await _safeRestartListening();
         }
       },
@@ -523,47 +618,38 @@ class _MoodHomeState extends State<MoodHome> {
 
     _startSpeechWatchdog();
 
-    await speech.listen(
-      localeId: "si_LK",
-      listenMode: stt.ListenMode.dictation,
-      partialResults: true,
-      cancelOnError: false,
-      pauseFor: const Duration(seconds: 5),
-      listenFor: const Duration(minutes: 1),
-      onResult: (result) {
-        _lastSpeechResultAt = DateTime.now();
+    final isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    final pauseDuration = isMobile
+        ? const Duration(seconds: 10)
+        : const Duration(seconds: 5);
+    final listenDuration = isMobile
+        ? const Duration(minutes: 2)
+        : const Duration(minutes: 1);
 
-        final recognized = result.recognizedWords.trim();
-        if (recognized.isEmpty) return;
+    final localeId = await _resolveSpeechLocaleId();
+    final preferredLocale = localeId ?? "si_LK";
+    final startedPreferred = await _tryStartListening(
+      preferredLocale,
+      pauseFor: pauseDuration,
+      listenFor: listenDuration,
+    );
+    if (startedPreferred) return;
 
-        if (result.finalResult) {
-          final currentDisplay = _buildCombinedTranscript();
+    if (preferredLocale != "si_LK") {
+      final startedSi = await _tryStartListening(
+        "si_LK",
+        pauseFor: pauseDuration,
+        listenFor: listenDuration,
+      );
+      if (startedSi) return;
+    }
 
-          if (_accumulatedTranscript.isEmpty) {
-            _accumulatedTranscript = recognized;
-          } else if (recognized.startsWith(_accumulatedTranscript)) {
-            _accumulatedTranscript = recognized;
-          } else if (currentDisplay.startsWith(_accumulatedTranscript) &&
-              recognized.startsWith(_currentPartialTranscript)) {
-            _accumulatedTranscript = currentDisplay;
-          } else if (!_accumulatedTranscript.endsWith(recognized)) {
-            _accumulatedTranscript = "$_accumulatedTranscript $recognized".trim();
-          }
-
-          _finalTranscript = _accumulatedTranscript;
-          _currentPartialTranscript = "";
-        } else {
-          _currentPartialTranscript = recognized;
-        }
-
-        final displayText = _buildCombinedTranscript();
-
-        if (mounted) {
-          setState(() {
-            _syncTranscriptToUi(displayText);
-          });
-        }
-      },
+    await _tryStartListening(
+      null,
+      pauseFor: pauseDuration,
+      listenFor: listenDuration,
     );
   }
 
@@ -820,6 +906,17 @@ class _MoodHomeState extends State<MoodHome> {
       return;
     }
 
+    if (validation.isNeutralPhrase) {
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[questionIndex].answer = validation.normalized;
+        }
+        questions[questionIndex].mood = "Normal / සාමාන්‍ය";
+        questions[questionIndex].loadingMood = false;
+      });
+      return;
+    }
+
     if (validation.isValidText) {
       try {
         final res = await http.post(
@@ -995,6 +1092,18 @@ class _MoodHomeState extends State<MoodHome> {
       return;
     }
 
+    if (validation.isNeutralPhrase) {
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[currentQuestionIndex].answer = validation.normalized;
+          questions[currentQuestionIndex].skipped = false;
+        }
+        questions[currentQuestionIndex].mood = "Normal / සාමාන්‍ය";
+      });
+      nextQuestion();
+      return;
+    }
+
     if (validation.isValidText) {
       nextQuestion();
       return;
@@ -1101,11 +1210,7 @@ class _MoodHomeState extends State<MoodHome> {
       if (questionId == 1) {
         answers.add(answer);
       } else {
-        if (_isYesNoAnswer(answer)) {
-          answers.add(_convertYesNoToSentence(questionId, answer));
-        } else {
-          answers.add(answer);
-        }
+        answers.add(answer);
       }
     }
 
@@ -1121,6 +1226,34 @@ class _MoodHomeState extends State<MoodHome> {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final finalMood = data["final_mood"]?.toString() ?? "";
+        final dynamic totalScoreValue = data["total_score"];
+        final int? totalScore = totalScoreValue is num
+            ? totalScoreValue.toInt()
+            : int.tryParse(totalScoreValue?.toString() ?? "");
+        final List<int> perQuestionScores = <int>[];
+        final dynamic perQuestionValue = data["per_question"];
+        if (perQuestionValue is List) {
+          for (final item in perQuestionValue) {
+            if (item is Map && item.containsKey("score")) {
+              final scoreValue = item["score"];
+              if (scoreValue is num) {
+                perQuestionScores.add(scoreValue.toInt());
+              } else {
+                final parsed = int.tryParse(scoreValue?.toString() ?? "");
+                if (parsed != null) {
+                  perQuestionScores.add(parsed);
+                }
+              }
+            } else if (item is num) {
+              perQuestionScores.add(item.toInt());
+            } else {
+              final parsed = int.tryParse(item?.toString() ?? "");
+              if (parsed != null) {
+                perQuestionScores.add(parsed);
+              }
+            }
+          }
+        }
 
         await Future.delayed(const Duration(seconds: 3));
 
@@ -1195,7 +1328,11 @@ class _MoodHomeState extends State<MoodHome> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => MoodResultScreen(mood: finalMood),
+              builder: (context) => MoodResultScreen(
+                mood: finalMood,
+                totalScore: totalScore,
+                perQuestionScores: perQuestionScores,
+              ),
             ),
           );
         }
@@ -1328,6 +1465,18 @@ class _MoodHomeState extends State<MoodHome> {
       return;
     }
 
+    if (validation.isNeutralPhrase) {
+      setState(() {
+        if (validation.normalized.isNotEmpty) {
+          questions[currentQuestionIndex].answer = validation.normalized;
+          questions[currentQuestionIndex].skipped = false;
+        }
+        questions[currentQuestionIndex].mood = "Normal / සාමාන්‍ය";
+      });
+      await submitAllAnswers();
+      return;
+    }
+
     if (validation.isValidText) {
       await submitAllAnswers();
       return;
@@ -1352,6 +1501,11 @@ class _MoodHomeState extends State<MoodHome> {
 
   @override
   Widget build(BuildContext context) {
+    const primaryGreen = Color(0xFF4CAF50);
+    const secondaryGreen = Color(0xFF2E7D32);
+    const lightGrey = Color(0xFFF5F5F5);
+    const softBlue = Color(0xFF64B5F6);
+    const textDark = Color(0xFF333333);
     final currentQuestion = questions[currentQuestionIndex];
     final showText = listening ? liveTranscript : currentQuestion.answer;
     final isLastQuestion = currentQuestionIndex == questions.length - 1;
@@ -1520,7 +1674,7 @@ class _MoodHomeState extends State<MoodHome> {
                       const SizedBox(height: 14),
 
                       Text(
-                        listening ? "🎤 සවන් දෙනවා... කථා කරන්න" : "✅ ඔබේ පිළිතුර",
+                        listening ? "🎤 සවන් දෙනවා... කථා කරන්න" : "ඔබේ පිළිතුර",
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
@@ -1619,7 +1773,7 @@ class _MoodHomeState extends State<MoodHome> {
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.all(16),
-                        backgroundColor: listening ? Colors.red : const Color(0xFF22C55E),
+                        backgroundColor: softBlue,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -1638,8 +1792,8 @@ class _MoodHomeState extends State<MoodHome> {
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.all(14),
-                          foregroundColor: Colors.orange,
-                          side: const BorderSide(color: Colors.orange),
+                          foregroundColor: secondaryGreen,
+                          side: const BorderSide(color: secondaryGreen),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -1659,8 +1813,8 @@ class _MoodHomeState extends State<MoodHome> {
                               label: const Text("පෙර"),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.all(14),
-                                foregroundColor: const Color(0xFF22C55E),
-                                side: const BorderSide(color: Color(0xFF22C55E)),
+                                foregroundColor: secondaryGreen,
+                                side: const BorderSide(color: secondaryGreen),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                 ),
@@ -1670,12 +1824,13 @@ class _MoodHomeState extends State<MoodHome> {
                         if (currentQuestionIndex > 0) const SizedBox(width: 12),
                         if (currentQuestionIndex > 0)
                           Expanded(
-                            child: OutlinedButton(
+                            child: ElevatedButton(
                               onPressed: listening ? null : handleSkipQuestion,
-                              style: OutlinedButton.styleFrom(
+                              style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(14),
-                                foregroundColor: Colors.grey[600],
-                                side: BorderSide(color: Colors.grey[400]!),
+                                backgroundColor: lightGrey,
+                                foregroundColor: textDark,
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                 ),
@@ -1699,7 +1854,7 @@ class _MoodHomeState extends State<MoodHome> {
                             ),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.all(14),
-                              backgroundColor: const Color(0xFF22C55E),
+                              backgroundColor: primaryGreen,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(18),

@@ -88,70 +88,83 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
+        final media = MediaQuery.of(dialogContext);
+        final isSmallScreen = media.size.width < 360;
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           contentPadding: const EdgeInsets.all(24),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Welcome animation
-              SizedBox(
-                height: 120,
-                child: Lottie.asset(
-                  'assets/lottie/welcome.json',
-                  fit: BoxFit.contain,
-                ),
+          content: SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: media.size.height * 0.8,
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'සුවමනසට සාදරයෙන් පිළිගනිමු! 🎉',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF22C55E),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'මෙහි ඔබට:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    // Welcome animation
+                    SizedBox(
+                      height: isSmallScreen ? 90 : 120,
+                      child: Lottie.asset(
+                        'assets/lottie/welcome.json',
+                        fit: BoxFit.contain,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildTipItem('📝', 'ඔබේ mood එක දිනපතා පරීක්ෂා කරන්න'),
-                    const SizedBox(height: 8),
-                    _buildTipItem('🎨', 'අඳින්න සහ හැඟීම් ප්‍රකාශ කරන්න'),
-                    const SizedBox(height: 8),
-                    _buildTipItem('🎮', 'සතුටු ක්‍රීඩා සහ අභ්‍යාස'),
-                    const SizedBox(height: 8),
-                    _buildTipItem('🎵', 'ඔබේ මනෝභාවය සඳහා සංගීතය'),
+                    const SizedBox(height: 16),
+                    Text(
+                      'සුවමනසට සාදරයෙන් පිළිගනිමු! 🎉',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 18 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF22C55E),
+                      ),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'මෙහි ඔබට:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isSmallScreen ? 14 : 16,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTipItem('📝', 'ඔබේ mood එක දිනපතා පරීක්ෂා කරන්න'),
+                          const SizedBox(height: 8),
+                          _buildTipItem('🎨', 'අඳින්න සහ හැඟීම් ප්‍රකාශ කරන්න'),
+                          const SizedBox(height: 8),
+                          _buildTipItem('🎮', 'සතුටු ක්‍රීඩා සහ අභ්‍යාස'),
+                          const SizedBox(height: 8),
+                          _buildTipItem('🎵', 'ඔබේ මනෝභාවය සඳහා සංගීතය'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'ඔයාගෙ මේ ගිණුම හදල තියෙන්නෙ ඔයාගේ දෙමාපියො හරි ඔයාගේ භාරකාරයෝ හරි, ඉතින් සුව මනස අපි කැමතියි ඔයාගේ පෞද්ගලිකත්වය ආරක්ෂා කිරීම වෙනුවෙන් ඔයා ඔයාගේ මුරපදය මාරු කරනවනම් ඒ වගේම අපේ Email Alert එක සක්‍රිය කිරීමෙන් ඔයාගේ මූඩ් එක අවුල් ගියපු වෙලාවක ඔයාගේ අවසරය ඇතිව අපිට ලේසියෙන්ම ඔයාගෙ දෙමාපියො හරි භාරකාරය හරි දැනුවත් කරන්න පුළුවන්',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 12 : 13,
+                        color: Colors.black54,
+                      ),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'ඔයාගෙ මේ ගිණුම හදල තියෙන්නෙ ඔයාගේ දෙමාපියො හරි ඔයාගේ භාරකාරයෝ හරි, ඉතින් සුව මනස අපි කැමතියි ඔයාගේ පෞද්ගලිකත්වය ආරක්ෂා කිරීම වෙනුවෙන් ඔයා ඔයාගේ මුරපදය මාරු කරනවනම් ඒ වගේම අපේ Email Alert එක සක්‍රිය කිරීමෙන් ඔයාගේ මූඩ් එක අවුල් ගියපු වෙලාවක ඔයාගේ අවසරය ඇතිව අපිට ලේසියෙන්ම ඔයාගෙ දෙමාපියො හරි භාරකාරය හරි දැනුවත් කරන්න පුළුවන්',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
           actions: [
             Column(
@@ -582,8 +595,16 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      isWideScreen
-                          ? Row(
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          final isCompact = screenWidth < 480;
+                          final cardWidth = isCompact
+                              ? (screenWidth * 0.56).clamp(180.0, 220.0)
+                              : (screenWidth * 0.35).clamp(220.0, 280.0);
+
+                          if (isWideScreen) {
+                            return Row(
                               children: [
                                 Expanded(
                                   child: _QuickActionCard(
@@ -605,14 +626,17 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                                   ),
                                 ),
                               ],
-                            )
-                          : SizedBox(
-                              height: 130,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
+                            );
+                          }
+
+                          return SizedBox(
+                            height: 140,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
                                 children: [
                                   SizedBox(
-                                    width: 200,
+                                    width: cardWidth,
                                     child: _QuickActionCard(
                                       title: 'Bubble Game',
                                       animationAsset: 'assets/animations/bubble.json',
@@ -623,7 +647,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   SizedBox(
-                                    width: 200,
+                                    width: cardWidth,
                                     child: _QuickActionCard(
                                       title: 'Breathing Exercise',
                                       animationAsset: 'assets/animations/breathing.json',
@@ -635,6 +659,9 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                                 ],
                               ),
                             ),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 36),
                       Row(
                         children: [
@@ -738,11 +765,14 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.of(context).size.width < 360;
+    final double iconSize = isCompact ? 44 : 48;
+    final double tileSize = isCompact ? 56 : 64;
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(18),
@@ -760,18 +790,19 @@ class _QuickActionCard extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: tileSize,
+              height: tileSize,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
                 child: SizedBox(
-                  width: 48,
-                  height: 48,
+                  width: iconSize,
+                  height: iconSize,
                   child: Lottie.asset(
                     animationAsset,
                     fit: BoxFit.contain,
@@ -782,14 +813,19 @@ class _QuickActionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: color.withOpacity(0.9),
-                letterSpacing: 0.2,
+            Flexible(
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                softWrap: true,
+                style: TextStyle(
+                  fontSize: isCompact ? 13 : 15,
+                  fontWeight: FontWeight.w700,
+                  color: color.withOpacity(0.9),
+                  letterSpacing: 0.2,
+                ),
               ),
             ),
           ],

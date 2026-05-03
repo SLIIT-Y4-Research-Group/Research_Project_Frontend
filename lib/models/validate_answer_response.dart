@@ -28,4 +28,5 @@ class ValidateAnswerResponse {
   bool get isYesNoAnswer => statusNormalized == "YES_NO" || isYesNo;
   bool get isValidText => statusNormalized == "VALID_TEXT";
   bool get isQ1DirectMood => statusNormalized == "Q1_DIRECT_MOOD";
+  bool get isNeutralPhrase => statusNormalized == "NEUTRAL_PHRASE";
 }
