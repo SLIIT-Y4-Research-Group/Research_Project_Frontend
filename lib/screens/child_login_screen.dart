@@ -32,15 +32,19 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
   }
 
   Future<void> _login() async {
+    debugPrint('[UI][CHILD LOGIN] Login button tapped');
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
+      debugPrint('[UI][CHILD LOGIN] Calling ApiClient.loginChild');
       final response = await ApiClient.loginChild(
         _usernameController.text.trim(),
         _passwordController.text,
       );
+      debugPrint('[UI][CHILD LOGIN] API call returned: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -89,6 +93,7 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
         }
       }
     } catch (e) {
+      debugPrint('[UI][CHILD LOGIN] Exception in login handler: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

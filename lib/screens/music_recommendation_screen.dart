@@ -32,7 +32,8 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
     if (response.statusCode != 200) {
       throw Exception('Failed to load tracks');
     }
-    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final List<dynamic> data = json['tracks'] as List<dynamic>;
     return data.map((item) {
       final map = item as Map<String, dynamic>;
       return {

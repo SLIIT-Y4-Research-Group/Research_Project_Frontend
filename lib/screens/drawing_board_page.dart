@@ -13,6 +13,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/api_config.dart';
+
 import 'dart:io' as io;
 
 enum BrushType { pen, pencil, marker, eraser }
@@ -37,10 +39,7 @@ class DrawingBoardPage extends StatefulWidget {
     super.key,
     required this.childId,
     String? baseUrl,
-  }) : baseUrl = baseUrl ??
-            (kIsWeb
-                ? 'http://localhost:8000'
-                : 'http://10.0.2.2:8000');
+  }) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final int childId;
   final String baseUrl;
@@ -210,7 +209,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     } on TimeoutException {
       throw Exception(
         kIsWeb
-            ? 'Connection timed out. Make sure backend is running on http://localhost:8000 and CORS is enabled.'
+            ? 'Connection timed out. Make sure backend is running on ${widget.baseUrl} and CORS is enabled.'
             : 'Connection timed out. Check that the backend is running and reachable.',
       );
     }
