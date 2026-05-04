@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:lottie/lottie.dart';
 import 'package:just_audio/just_audio.dart';
 import '../config/api_config.dart';
 
@@ -30,11 +29,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   Duration _position = Duration.zero;
   late Map<String, dynamic> _currentSong;
   late int _currentIndex;
-  final List<String> _playerAnimations = const [
-    'assets/animations/Music Player.json',
-    'assets/animations/media player dancing.json',
-    'assets/animations/alarmclock-lottie.json',
-  ];
 
   @override
   void initState() {
@@ -164,8 +158,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                       children: [
                         const SizedBox(height: 20),
                         _buildHeroAlbumArt(songColors),
-                        const SizedBox(height: 12),
-                        _buildMusicAnimation(),
                         const SizedBox(height: 40),
                         _buildSongInfo(),
                         const SizedBox(height: 30),
@@ -255,24 +247,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                 },
               )
             : const SizedBox.shrink(),
-      ),
-    );
-  }
-
-  Widget _buildMusicAnimation() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: Container(
-        height: 120,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
-        ),
-        child: Lottie.asset(
-          _playerAnimations[_currentIndex % _playerAnimations.length],
-          fit: BoxFit.contain,
-        ),
       ),
     );
   }
