@@ -16,18 +16,21 @@ class ParentDashboardScreen extends StatefulWidget {
   State<ParentDashboardScreen> createState() => _ParentDashboardScreenState();
 }
 
-class _ParentDashboardScreenState extends State<ParentDashboardScreen> with WidgetsBindingObserver {
+class _ParentDashboardScreenState extends State<ParentDashboardScreen>
+    with WidgetsBindingObserver {
   final _authService = AuthService();
 
   List<Map<String, dynamic>> _children = [];
-  String? _selectedChildId;
-  Map<String, dynamic>? _selectedChild;
   List<Map<String, dynamic>> _trustedContacts = [];
 
+  String? _selectedChildId;
+  Map<String, dynamic>? _selectedChild;
+
   bool _isLoading = false;
+  bool _isDarkMode = false;
+
   Timer? _pollingTimer;
   bool _isPolling = false;
-  bool _isDarkMode = false;
 
   Color get _pageBackground =>
       _isDarkMode ? const Color(0xFF111827) : const Color(0xFFF6F8F7);
@@ -73,13 +76,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
   Color get _subtleSurfaceTint =>
       _isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF8FCF9);
 
-  Future<void> _refreshData() async {
-    await _loadChildren();
-    if (_selectedChildId != null) {
-      await _loadTrustedContacts(_selectedChildId!);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -88,14 +84,36 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopTrustedContactsPolling();
+    super.dispose();
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
-    // Refresh data when app comes back to foreground
-    if (state == AppLifecycleState.resumed) {
-      if (_selectedChildId != null) {
-        _loadTrustedContacts(_selectedChildId!);
-      }
+
+    if (state == AppLifecycleState.resumed && _selectedChildId != null) {
+      _loadTrustedContacts(_selectedChildId!);
+    }
+  }
+
+  String? _getChildId(Map<String, dynamic> child) {
+    return child['id']?.toString() ?? child['_id']?.toString();
+  }
+
+  String? _getTrustedId(Map<String, dynamic> contact) {
+    return contact['id']?.toString() ??
+        contact['_id']?.toString() ??
+        contact['trusted_id']?.toString() ??
+        contact['trustedId']?.toString();
+  }
+
+  Future<void> _refreshData() async {
+    await _loadChildren();
+    if (_selectedChildId != null) {
+      await _loadTrustedContacts(_selectedChildId!);
     }
   }
 
@@ -109,23 +127,27 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        final children = data.cast<Map<String, dynamic>>();
 
         if (!mounted) return;
-
-        final children = data.cast<Map<String, dynamic>>();
 
         setState(() {
           _children = children;
 
           if (_children.isNotEmpty && _selectedChildId == null) {
-            _selectedChildId = _children[0]['id']?.toString();
-            _selectedChild = _children[0];
+            _selectedChild = _children.first;
+            _selectedChildId = _getChildId(_children.first);
           }
         });
 
         if (_selectedChildId != null) {
           await _loadTrustedContacts(_selectedChildId!);
         }
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load children: ${response.statusCode}')),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -162,34 +184,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     }
   }
 
-  void _startTrustedContactsPolling() {
-    _stopTrustedContactsPolling();
-
-    if (_selectedChildId == null || !mounted) return;
-
-    final hasPendingContacts = _trustedContacts.any(
-      (contact) =>
-          (contact['status'] ?? '').toString().toLowerCase() == 'pending',
-    );
-
-    if (!hasPendingContacts && _trustedContacts.isNotEmpty) return;
-
-    _isPolling = true;
-    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (!mounted || _selectedChildId == null) {
-        _stopTrustedContactsPolling();
-        return;
-      }
-      _fetchTrustedContacts(_selectedChildId!);
-    });
-  }
-
-  void _stopTrustedContactsPolling() {
-    _pollingTimer?.cancel();
-    _pollingTimer = null;
-    _isPolling = false;
-  }
-
   Future<void> _fetchTrustedContacts(String childId) async {
     try {
       final response = await ApiClient.getTrustedContacts(childId);
@@ -213,9 +207,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
           _stopTrustedContactsPolling();
         }
       }
-    } catch (e) {
-      // Silently handle polling errors
-    }
+    } catch (_) {}
   }
 
   bool _contactsChanged(List<Map<String, dynamic>> newContacts) {
@@ -236,18 +228,59 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     return false;
   }
 
+  void _startTrustedContactsPolling() {
+    _stopTrustedContactsPolling();
+
+    if (_selectedChildId == null || !mounted) return;
+
+    final hasPendingContacts = _trustedContacts.any(
+      (contact) =>
+          (contact['status'] ?? '').toString().toLowerCase() == 'pending',
+    );
+
+    if (!hasPendingContacts && _trustedContacts.isNotEmpty) return;
+
+    _isPolling = true;
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || _selectedChildId == null) {
+        _stopTrustedContactsPolling();
+        return;
+      }
+
+      _fetchTrustedContacts(_selectedChildId!);
+    });
+  }
+
+  void _stopTrustedContactsPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _isPolling = false;
+  }
+
   void _selectChild(Map<String, dynamic> child) {
     _stopTrustedContactsPolling();
 
     setState(() {
-      _selectedChildId = child['id']?.toString();
       _selectedChild = child;
+      _selectedChildId = _getChildId(child);
       _trustedContacts = [];
     });
 
     if (_selectedChildId != null) {
       _loadTrustedContacts(_selectedChildId!);
     }
+  }
+
+  Future<void> _logout() async {
+    await _authService.logout();
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      (route) => false,
+    );
   }
 
   void _showAddChildDialog() {
@@ -284,18 +317,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                   TextFormField(
                     controller: usernameController,
                     style: GoogleFonts.inter(color: _primaryTextColor),
-                    decoration: InputDecoration(
-                      labelText: 'Username',
-                      labelStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: _secondaryTextColor,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: _fieldFillColor,
-                    ),
+                    decoration: _inputDecoration('Username'),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
@@ -303,36 +325,14 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                     controller: passwordController,
                     obscureText: true,
                     style: GoogleFonts.inter(color: _primaryTextColor),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      labelStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: _secondaryTextColor,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: _fieldFillColor,
-                    ),
+                    decoration: _inputDecoration('Password'),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameController,
                     style: GoogleFonts.inter(color: _primaryTextColor),
-                    decoration: InputDecoration(
-                      labelText: 'Name',
-                      labelStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: _secondaryTextColor,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: _fieldFillColor,
-                    ),
+                    decoration: _inputDecoration('Name'),
                     validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
@@ -340,18 +340,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                     controller: ageController,
                     keyboardType: TextInputType.number,
                     style: GoogleFonts.inter(color: _primaryTextColor),
-                    decoration: InputDecoration(
-                      labelText: 'Age',
-                      labelStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: _secondaryTextColor,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: _fieldFillColor,
-                    ),
+                    decoration: _inputDecoration('Age'),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Required';
                       final parsed = int.tryParse(v);
@@ -414,6 +403,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Child added successfully'),
+                                    backgroundColor: Color(0xFF22C55E),
                                   ),
                                 );
                               } else {
@@ -463,10 +453,26 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     );
   }
 
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.inter(
+        fontSize: 14,
+        color: _secondaryTextColor,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      filled: true,
+      fillColor: _fieldFillColor,
+    );
+  }
+
   void _showInviteTrustedDialog(String childId) {
     final emailController = TextEditingController();
     String? selectedRelationship;
     bool isInviting = false;
+
     const relationshipOptions = [
       'Teacher',
       'Relative',
@@ -503,22 +509,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(dialogContext),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      onPressed: isInviting
+                          ? null
+                          : () => Navigator.pop(dialogContext),
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  'Email Address',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _primaryTextColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -526,31 +523,15 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                   style: GoogleFonts.inter(color: _primaryTextColor),
                   decoration: InputDecoration(
                     hintText: 'contact@email.com',
-                    hintStyle: TextStyle(
-                      color: _secondaryTextColor.withValues(alpha: 0.6),
-                    ),
                     filled: true,
                     fillColor: _dialogFieldFillColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Relationship',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _primaryTextColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -564,13 +545,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                       dropdownColor: _cardColor,
                       hint: Text(
                         'Select relationship',
-                        style: TextStyle(
-                          color: _secondaryTextColor.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: _secondaryTextColor,
+                        style: TextStyle(color: _secondaryTextColor),
                       ),
                       style: GoogleFonts.inter(
                         color: _primaryTextColor,
@@ -584,24 +559,15 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                       }).toList(),
                       onChanged: isInviting
                           ? null
-                          : (String? newValue) {
+                          : (value) {
                               setLocalState(() {
-                                selectedRelationship = newValue;
+                                selectedRelationship = value;
                               });
                             },
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'They will receive an email and must accept to connect.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -618,9 +584,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                               return;
                             }
 
-                            setLocalState(() {
-                              isInviting = true;
-                            });
+                            setLocalState(() => isInviting = true);
 
                             try {
                               final response =
@@ -646,9 +610,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                                   ),
                                 );
                               } else {
-                                setLocalState(() {
-                                  isInviting = false;
-                                });
+                                setLocalState(() => isInviting = false);
 
                                 final data = jsonDecode(response.body);
 
@@ -663,9 +625,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                                 );
                               }
                             } catch (e) {
-                              setLocalState(() {
-                                isInviting = false;
-                              });
+                              setLocalState(() => isInviting = false);
 
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -675,29 +635,22 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                           },
                     icon: isInviting
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
+                            width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Icon(Icons.email_outlined, size: 20),
-                    label: Text(
-                      isInviting ? 'Sending...' : 'Send Invitation Email',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                        : const Icon(Icons.email_outlined),
+                    label: Text(isInviting ? 'Sending...' : 'Send Invitation'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF43A047),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 0,
                     ),
                   ),
                 ),
@@ -734,117 +687,49 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Remove Trusted Contact',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryTextColor,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed:
-                          isDeleting ? null : () => Navigator.pop(dialogContext),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
                 Text(
-                  'Contact: $email',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: _secondaryTextColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Reason for removal',
+                  'Remove Trusted Contact',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     color: _primaryTextColor,
                   ),
                 ),
                 const SizedBox(height: 12),
+                Text(
+                  'Contact: $email',
+                  style: TextStyle(color: _secondaryTextColor),
+                ),
+                const SizedBox(height: 20),
                 TextField(
                   controller: reasonController,
                   maxLines: 4,
                   enabled: !isDeleting,
                   style: GoogleFonts.inter(color: _primaryTextColor),
                   decoration: InputDecoration(
-                    hintText:
-                        'Please provide a reason for removing this contact...',
-                    hintStyle: TextStyle(
-                      color: _secondaryTextColor.withValues(alpha: 0.6),
-                    ),
+                    hintText: 'Please provide a reason...',
                     filled: true,
                     fillColor: _dialogFieldFillColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: errorText != null
-                          ? const BorderSide(color: Colors.red, width: 1.5)
-                          : BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: errorText != null
-                          ? const BorderSide(color: Colors.red, width: 1.5)
-                          : BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: errorText != null
-                            ? Colors.red
-                            : const Color(0xFF43A047),
-                        width: 1.5,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.all(16),
                     errorText: errorText,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onChanged: (value) {
                     if (errorText != null && value.trim().length >= 3) {
-                      setLocalState(() {
-                        errorText = null;
-                      });
+                      setLocalState(() => errorText = null);
                     }
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed:
-                            isDeleting ? null : () => Navigator.pop(dialogContext),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(
-                            color: _isDarkMode
-                                ? Colors.grey[600]!
-                                : const Color(0xFFD1D5DB),
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: _secondaryTextColor,
-                          ),
-                        ),
+                        onPressed: isDeleting
+                            ? null
+                            : () => Navigator.pop(dialogContext),
+                        child: const Text('Cancel'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -870,9 +755,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                                   return;
                                 }
 
-                                setLocalState(() {
-                                  isDeleting = true;
-                                });
+                                setLocalState(() => isDeleting = true);
 
                                 try {
                                   final response =
@@ -899,14 +782,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                                       ),
                                     );
                                   } else {
-                                    final data = jsonDecode(response.body);
-
                                     if (!mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Failed to remove contact: ${data['message'] ?? 'Unknown error'}',
-                                        ),
+                                      const SnackBar(
+                                        content:
+                                            Text('Failed to remove contact'),
                                         backgroundColor: Colors.red,
                                       ),
                                     );
@@ -928,29 +808,18 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFDC2626),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
                         ),
                         child: isDeleting
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 18,
+                                height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor:
                                       AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                            : Text(
-                                'Remove',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            : const Text('Remove'),
                       ),
                     ),
                   ],
@@ -960,25 +829,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
           ),
         ),
       ),
-    );
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _stopTrustedContactsPolling();
-    super.dispose();
-  }
-
-  Future<void> _logout() async {
-    await _authService.logout();
-
-    if (!mounted) return;
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-      (route) => false,
     );
   }
 
@@ -1017,104 +867,63 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
       decoration: BoxDecoration(
         color: _headerColor,
         border: Border(
-          bottom: BorderSide(
-            color: _borderColor,
-            width: 1,
-          ),
+          bottom: BorderSide(color: _borderColor, width: 1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: _isDarkMode ? 0.2 : 0.04),
-            blurRadius: _isDarkMode ? 8 : 12,
-            offset: Offset(0, _isDarkMode ? 2 : 3),
-          ),
-          if (!_isDarkMode)
-            BoxShadow(
-              color: const Color(0xFF43A047).withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 1),
-            ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Dashboard',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryTextColor,
-                  letterSpacing: -0.5,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dashboard',
+                  style: GoogleFonts.inter(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: _primaryTextColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Manage your child profiles and trusted contacts',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: _secondaryTextColor,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 4),
+                Text(
+                  'Manage your child profiles, reports and trusted contacts',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: _secondaryTextColor,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Row(
             children: [
               IconButton(
                 onPressed: () {
-                  setState(() {
-                    _isDarkMode = !_isDarkMode;
-                  });
+                  setState(() => _isDarkMode = !_isDarkMode);
                 },
                 icon: Icon(
                   _isDarkMode
                       ? Icons.light_mode_outlined
                       : Icons.dark_mode_outlined,
-                  size: 22,
                 ),
-                tooltip:
-                    _isDarkMode ? 'Disable dark mode' : 'Enable dark mode',
                 style: IconButton.styleFrom(
                   foregroundColor: _isDarkMode
                       ? const Color(0xFFFBBF24)
                       : const Color(0xFF6B7280),
                   backgroundColor: _isDarkMode
                       ? const Color(0xFFFBBF24).withValues(alpha: 0.10)
-                      : const Color(0xFFE8F5E9).withValues(alpha: 0.50),
-                  padding: const EdgeInsets.all(12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                      : const Color(0xFFE8F5E9),
                 ),
               ),
               const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: _logout,
                 icon: const Icon(Icons.logout, size: 18),
-                label: Text(
-                  'Logout',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                label: const Text('Logout'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF43A047),
-                  side: const BorderSide(
-                    color: Color(0xFF43A047),
-                    width: 1.5,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  side: const BorderSide(color: Color(0xFF43A047)),
                 ),
               ),
             ],
@@ -1133,14 +942,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 11,
-              child: _buildChildrenCard(),
-            ),
-            Expanded(
-              flex: 19,
-              child: _buildChildDetails(),
-            ),
+            Expanded(flex: 11, child: _buildChildrenCard()),
+            Expanded(flex: 19, child: _buildChildDetails()),
           ],
         ),
       ),
@@ -1158,7 +961,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
           children: [
             _buildChildrenCard(),
             const SizedBox(height: 20),
-            if (_selectedChild != null) _buildChildDetails(),
+            _buildChildDetails(),
           ],
         ),
       ),
@@ -1169,118 +972,48 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _borderColor,
-          width: _isDarkMode ? 1 : 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
-            blurRadius: _isDarkMode ? 20 : 24,
-            offset: Offset(0, _isDarkMode ? 4 : 6),
-          ),
-          if (!_isDarkMode)
-            BoxShadow(
-              color: const Color(0xFF43A047).withValues(alpha: 0.03),
-              blurRadius: 16,
-              offset: const Offset(0, 2),
-            ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'My Children',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryTextColor,
-                  letterSpacing: -0.3,
+              Expanded(
+                child: Text(
+                  'My Children',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: _primaryTextColor,
+                  ),
                 ),
               ),
               ElevatedButton.icon(
                 onPressed: _showAddChildDialog,
                 icon: const Icon(Icons.add, size: 18),
-                label: Text(
-                  'Add Child',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                label: const Text('Add Child'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF43A047),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           if (_children.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _emptyStateIconBg,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        Icons.family_restroom,
-                        size: 48,
-                        color: _emptyStateIconColor,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'No children added yet',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: _secondaryTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Click "Add Child" to get started',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: _emptyStateIconColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            _buildEmptyState(
+              icon: Icons.family_restroom,
+              title: 'No children added yet',
+              subtitle: 'Click "Add Child" to get started',
             )
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _children.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
-                final child = _children[index];
-                return _buildChildTile(child);
+                return _buildChildTile(_children[index]);
               },
             ),
         ],
@@ -1289,7 +1022,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
   }
 
   Widget _buildChildTile(Map<String, dynamic> child) {
-    final childId = child['id']?.toString();
+    final childId = _getChildId(child);
     final isSelected = _selectedChildId == childId;
     final name = (child['name'] ?? 'Unknown').toString();
     final age = child['age']?.toString() ?? 'N/A';
@@ -1304,44 +1037,21 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
           color: isSelected ? _selectedChildBg : _unselectedChildBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF43A047)
-                : (_isDarkMode ? _borderColor : const Color(0xFFE3EAE5)),
+            color: isSelected ? const Color(0xFF43A047) : _borderColor,
             width: isSelected ? 2 : 1.5,
           ),
-          boxShadow: !_isDarkMode && isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF43A047).withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isSelected
-                      ? [const Color(0xFF43A047), const Color(0xFF66BB6A)]
-                      : [const Color(0xFF9CA3AF), const Color(0xFFD1D5DB)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+            CircleAvatar(
+              radius: 24,
+              backgroundColor:
+                  isSelected ? const Color(0xFF43A047) : Colors.grey,
+              child: Text(
+                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -1350,24 +1060,15 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: _primaryTextColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatusChip('Active', true),
-                    ],
+                  Text(
+                    name,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryTextColor,
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Text(
                     'Age $age • @$username',
                     style: GoogleFonts.inter(
@@ -1384,343 +1085,258 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     );
   }
 
-  Widget _buildStatusChip(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF43A047) : const Color(0xFF9CA3AF),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-
   Widget _buildChildDetails() {
     if (_selectedChild == null) {
       return Container(
-        margin: const EdgeInsets.only(top: 20, right: 20, bottom: 20),
-        padding: const EdgeInsets.all(60),
-        decoration: BoxDecoration(
-          color: _cardColor,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: _borderColor,
-            width: _isDarkMode ? 1 : 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
-              blurRadius: _isDarkMode ? 20 : 24,
-              offset: Offset(0, _isDarkMode ? 4 : 6),
-            ),
-            if (!_isDarkMode)
-              BoxShadow(
-                color: const Color(0xFF43A047).withValues(alpha: 0.03),
-                blurRadius: 16,
-                offset: const Offset(0, 2),
-              ),
-          ],
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: _emptyStateIconBg,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  Icons.info_outline,
-                  size: 56,
-                  color: _emptyStateIconColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Select a child to view details',
-                style: GoogleFonts.inter(
-                  color: _secondaryTextColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(28),
+        decoration: _cardDecoration(),
+        child: _buildEmptyState(
+          icon: Icons.child_care,
+          title: 'Select a child',
+          subtitle: 'Choose a child to view reports and trusted contacts',
         ),
       );
     }
 
-    final name = (_selectedChild!['name'] ?? 'Unknown').toString();
-    final age = _selectedChild!['age']?.toString() ?? 'N/A';
-    final username = (_selectedChild!['username'] ?? 'N/A').toString();
-    final alertConsent = _selectedChild!['alerts_consent'] == true;
+    final child = _selectedChild!;
+    final name = (child['name'] ?? 'Unknown').toString();
+    final username = (child['username'] ?? 'N/A').toString();
+    final age = child['age']?.toString() ?? 'N/A';
+    final alertConsent = child['alert_consent'] == true ||
+        child['alertConsent'] == true ||
+        child['alerts_enabled'] == true;
 
     return Container(
-      margin: const EdgeInsets.only(top: 20, right: 20, bottom: 20),
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: _cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _borderColor,
-              width: _isDarkMode ? 1 : 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
-                blurRadius: _isDarkMode ? 20 : 24,
-                offset: Offset(0, _isDarkMode ? 4 : 6),
-              ),
-              if (!_isDarkMode)
-                BoxShadow(
-                  color: const Color(0xFF43A047).withValues(alpha: 0.03),
-                  blurRadius: 16,
-                  offset: const Offset(0, 2),
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(28),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 34,
+                backgroundColor: const Color(0xFF43A047),
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: GoogleFonts.inter(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: _primaryTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '@$username',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        color: _secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildInfoChip(Icons.cake_outlined, 'Age $age'),
+              _buildInfoChip(
+                alertConsent
+                    ? Icons.notifications_active
+                    : Icons.notifications_off,
+                alertConsent ? 'Alerts ON' : 'Alerts OFF',
+                isAlert: true,
+                alertStatus: alertConsent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          Divider(color: _dividerColor),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Trusted Contacts',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: _primaryTextColor,
+                  ),
+                ),
+              ),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _selectedChildId == null
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ParentDrawingsScreen(
+                                  childId: _selectedChildId!,
+                                  childName: _selectedChild?['name']?.toString(),
+                                ),
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.image_outlined, size: 18),
+                    label: const Text('View Child Drawings'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _selectedChildId == null
+                        ? null
+                        : () => _showInviteTrustedDialog(_selectedChildId!),
+                    icon: const Icon(Icons.person_add, size: 18),
+                    label: const Text('Invite'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF43A047),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _selectedChildId == null
+                        ? null
+                        : () => _loadTrustedContacts(_selectedChildId!),
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (_trustedContacts.isEmpty)
+            _buildEmptyState(
+              icon: Icons.people_outline,
+              title: 'No trusted contacts yet',
+              subtitle: 'Invite trusted contacts to monitor this child',
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _trustedContacts.length,
+              separatorBuilder: (_, __) => Divider(color: _dividerColor),
+              itemBuilder: (context, index) {
+                return _buildTrustedContactRow(_trustedContacts[index]);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrustedContactRow(Map<String, dynamic> contact) {
+    final email = (contact['email'] ?? 'No email').toString();
+    final relationship = (contact['relationship'] ?? 'Trusted Contact').toString();
+    final status = (contact['status'] ?? 'pending').toString().toLowerCase();
+    final role = (contact['role'] ?? '').toString();
+    final trustedId = _getTrustedId(contact);
+
+    Color statusColor;
+    String statusLabel;
+
+    switch (status) {
+      case 'accepted':
+      case 'active':
+        statusColor = const Color(0xFF16A34A);
+        statusLabel = 'Accepted';
+        break;
+      case 'rejected':
+        statusColor = const Color(0xFFDC2626);
+        statusLabel = 'Rejected';
+        break;
+      default:
+        statusColor = const Color(0xFFF59E0B);
+        statusLabel = 'Pending';
+    }
+
+    return Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: statusColor.withValues(alpha: 0.12),
+          child: Icon(Icons.person_outline, color: statusColor),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF43A047).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: _primaryTextColor,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '@$username',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: _secondaryTextColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildInfoChip(Icons.cake_outlined, 'Age $age'),
-                  _buildInfoChip(
-                    alertConsent
-                        ? Icons.notifications_active
-                        : Icons.notifications_off,
-                    alertConsent ? 'Alerts ON' : 'Alerts OFF',
-                    isAlert: true,
-                    alertStatus: alertConsent,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Divider(color: _dividerColor, height: 1),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Trusted Contacts',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: _primaryTextColor,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ParentDrawingsScreen(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'View Child Drawings',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _selectedChildId == null
-                            ? null
-                            : () => _showInviteTrustedDialog(_selectedChildId!),
-                        icon: const Icon(Icons.person_add, size: 18),
-                        label: Text(
-                          'Invite',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF43A047),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _selectedChildId == null
-                            ? null
-                            : () => _loadTrustedContacts(_selectedChildId!),
-                        icon: const Icon(Icons.refresh, size: 22),
-                        tooltip: 'Refresh status',
-                        style: IconButton.styleFrom(
-                          backgroundColor: const Color(0xFFF3F4F6),
-                          foregroundColor: const Color(0xFF6B7280),
-                          padding: const EdgeInsets.all(14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (_trustedContacts.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: _emptyStateIconBg,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            Icons.people_outline,
-                            size: 40,
-                            color: _emptyStateIconColor,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No trusted contacts yet',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: _secondaryTextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Invite trusted contacts to monitor',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: _emptyStateIconColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _trustedContacts.length,
-                  separatorBuilder: (context, index) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(color: _dividerColor, height: 1),
-                  ),
-                  itemBuilder: (context, index) {
-                    final contact = _trustedContacts[index];
-                    return _buildTrustedContactRow(contact);
-                  },
+              Text(
+                email,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  color: _primaryTextColor,
                 ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                role.isEmpty ? relationship : '$relationship • $role',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: _secondaryTextColor,
+                ),
+              ),
             ],
           ),
         ),
-      ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            statusLabel,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: _selectedChildId == null || trustedId == null
+              ? null
+              : () => _showRemoveTrustedContactDialog(
+                    _selectedChildId!,
+                    trustedId,
+                    email,
+                  ),
+          icon: const Icon(Icons.delete_outline),
+          color: const Color(0xFFDC2626),
+          tooltip: 'Remove',
+        ),
+      ],
     );
   }
 
@@ -1731,15 +1347,11 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     bool alertStatus = false,
   }) {
     final bgColor = isAlert
-        ? (alertStatus
-            ? const Color(0xFFF0F9F2)
-            : const Color(0xFFFEF2F2))
+        ? (alertStatus ? const Color(0xFFF0F9F2) : const Color(0xFFFEF2F2))
         : (_isDarkMode ? _subtleSurfaceTint : const Color(0xFFF3F4F6));
 
     final textColor = isAlert
-        ? (alertStatus
-            ? const Color(0xFF43A047)
-            : const Color(0xFFDC2626))
+        ? (alertStatus ? const Color(0xFF43A047) : const Color(0xFFDC2626))
         : (_isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280));
 
     return Container(
@@ -1766,116 +1378,60 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     );
   }
 
-  Widget _buildTrustedContactRow(Map<String, dynamic> contact) {
-    final statusRaw = (contact['status'] ?? 'pending').toString();
-    final statusLower = statusRaw.toLowerCase();
-    final isAccepted = statusLower == 'accepted';
-    final email = (contact['email'] ?? 'N/A').toString();
-    final relationship =
-        (contact['relationship'] ?? contact['role'] ?? 'N/A').toString();
-
-    final displayStatus = statusRaw.isNotEmpty
-        ? statusRaw[0].toUpperCase() + statusRaw.substring(1)
-        : 'Pending';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isAccepted
-                        ? const Color(0xFFF0F9F2)
-                        : const Color(0xFFFEF3E0),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person_outline,
-                      size: 22,
-                      color: isAccepted
-                          ? const Color(0xFF43A047)
-                          : const Color(0xFFF59E0B),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        email,
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: _primaryTextColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        relationship,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: _secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: _emptyStateIconBg,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(icon, size: 42, color: _emptyStateIconColor),
             ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isAccepted
-                  ? const Color(0xFFF0F9F2)
-                  : const Color(0xFFFEF3E0),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              displayStatus,
+            const SizedBox(height: 16),
+            Text(
+              title,
               style: GoogleFonts.inter(
-                color: isAccepted
-                    ? const Color(0xFF43A047)
-                    : const Color(0xFFF59E0B),
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-                letterSpacing: 0.3,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: _secondaryTextColor,
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: _emptyStateIconColor,
+              ),
             ),
-            child: IconButton(
-              icon: const Icon(Icons.delete_outline, size: 20),
-              color: const Color(0xFFDC2626),
-              onPressed: _selectedChildId == null
-                  ? null
-                  : () => _showRemoveTrustedContactDialog(
-                        _selectedChildId!,
-                        contact['id']?.toString() ?? '',
-                        email,
-                      ),
-              tooltip: 'Remove',
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: _cardColor,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: _borderColor, width: 1.3),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: _isDarkMode ? 0.25 : 0.05),
+          blurRadius: 20,
+          offset: const Offset(0, 6),
+        ),
+      ],
     );
   }
 }

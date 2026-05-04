@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'child_drawing_gallery_screen.dart';
 import 'onboarding_lottie_screen.dart';
 import 'bubble_pop_page.dart';
 import 'balloon_breath_page.dart';
@@ -681,6 +681,14 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                         color: const Color(0xFFB86AD9),
                         onTap: () => _navigateTo(const OnboardingLottieScreen()),
                       ),
+                      const SizedBox(height: 12),
+_MainFunctionCard(
+  title: 'මගේ චිත්‍ර ගැලරිය',
+  subtitle: 'ඔබ යවා ඇති චිත්‍ර බලන්න',
+  animationAsset: 'assets/animations/gallery.json',
+  color: const Color(0xFF2563EB),
+  onTap: () => _navigateTo(const ChildDrawingGalleryScreen()),
+),
                       const SizedBox(height: 12),
                       _MainFunctionCard(
                         title: 'හඬ දිනපොත',

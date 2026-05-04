@@ -1,16 +1,23 @@
 import 'dart:async';
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../services/api_client.dart';
 import '../services/leaderboard_service.dart';
 
 class BubblePopPage extends StatefulWidget {
-  const BubblePopPage({super.key});
+  /// Pass the child's JWT token so the session can be logged.
+  /// If null the session is still played but not persisted.
+  const BubblePopPage({
+    super.key,
+    this.triggeredByEmotion,
+  });
+
+  /// "sad" when opened after a sad drawing result, null otherwise
+  final String? triggeredByEmotion;
 
   @override
   State<BubblePopPage> createState() => _BubblePopPageState();
 }
-
 
 class _BubblePopPageState extends State<BubblePopPage> {
   final Random _random = Random();
@@ -25,6 +32,9 @@ class _BubblePopPageState extends State<BubblePopPage> {
   Timer? spawnTimer;
   Timer? moveTimer;
   Timer? gameTimer;
+
+  /// Track when current game started so we can log duration
+  DateTime? _gameStartTime;
 
   Size screenSize = Size.zero;
 
@@ -46,13 +56,11 @@ class _BubblePopPageState extends State<BubblePopPage> {
   Future<void> startGame() async {
     if (gameRunning || _isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 800));
-
     if (!mounted) return;
+
+    _gameStartTime = DateTime.now();
 
     setState(() {
       score = 0;
@@ -65,13 +73,12 @@ class _BubblePopPageState extends State<BubblePopPage> {
     spawnTimer?.cancel();
     spawnTimer = Timer.periodic(const Duration(milliseconds: 650), (_) {
       if (!gameRunning) return;
-      if (bubbles.where((b) => !b.removed).length < 12) {
-        spawnBubble();
-      }
+      if (bubbles.where((b) => !b.removed).length < 12) spawnBubble();
     });
 
     moveTimer?.cancel();
-    moveTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+    moveTimer =
+        Timer.periodic(const Duration(milliseconds: 16), (_) {
       if (!gameRunning) return;
       moveBubbles();
     });
@@ -79,14 +86,8 @@ class _BubblePopPageState extends State<BubblePopPage> {
     gameTimer?.cancel();
     gameTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!gameRunning) return;
-
-      setState(() {
-        timeLeft--;
-      });
-
-      if (timeLeft <= 0) {
-        stopGame();
-      }
+      setState(() => timeLeft--);
+      if (timeLeft <= 0) stopGame();
     });
   }
 
@@ -94,48 +95,60 @@ class _BubblePopPageState extends State<BubblePopPage> {
     spawnTimer?.cancel();
     moveTimer?.cancel();
     gameTimer?.cancel();
+    setState(() => gameRunning = false);
 
-    setState(() {
-      gameRunning = false;
-    });
+    // Log the session silently
+    _logSession();
+  }
+
+  Future<void> _logSession() async {
+    if (_gameStartTime == null) return;
+    final duration =
+        DateTime.now().difference(_gameStartTime!).inSeconds.clamp(1, 300);
+
+    try {
+      await ApiClient.logTherapySession(
+        activityType: 'bubble_pop',
+        durationSeconds: duration,
+        score: score,
+        triggeredByEmotion: widget.triggeredByEmotion,
+      );
+    } catch (_) {
+      // Fail silently — game should never break because of logging
+    }
   }
 
   void spawnBubble() {
     if (screenSize == Size.zero) return;
-
     final size = 40 + _random.nextDouble() * 60;
     final x = _random.nextDouble() * (screenSize.width - size);
     final y = screenSize.height + 8;
     final vy = 1.2 + _random.nextDouble() * 2.2;
-    final vx = (_random.nextDouble() * 2 - 1) * (0.3 + _random.nextDouble() * 0.9);
+    final vx =
+        (_random.nextDouble() * 2 - 1) * (0.3 + _random.nextDouble() * 0.9);
     final baseColor = _bubbleColors[_random.nextInt(_bubbleColors.length)];
 
     setState(() {
-      bubbles.add(
-        _Bubble(
-          id: _random.nextInt(1 << 31),
-          x: x,
-          y: y,
-          size: size,
-          vx: vx,
-          vy: vy,
-          color: baseColor.withValues(alpha: 0.55),
-          borderColor: baseColor.withValues(alpha: 0.9),
-        ),
-      );
+      bubbles.add(_Bubble(
+        id: _random.nextInt(1 << 31),
+        x: x,
+        y: y,
+        size: size,
+        vx: vx,
+        vy: vy,
+        color: baseColor.withValues(alpha: 0.55),
+        borderColor: baseColor.withValues(alpha: 0.9),
+      ));
     });
   }
 
   void moveBubbles() {
     final w = screenSize.width;
-
     setState(() {
       for (final b in bubbles) {
         if (b.removed) continue;
-
         b.y -= b.vy;
         b.x += b.vx;
-
         if (b.x <= 0) {
           b.x = 0;
           b.vx = -b.vx;
@@ -143,23 +156,17 @@ class _BubblePopPageState extends State<BubblePopPage> {
           b.x = w - b.size;
           b.vx = -b.vx;
         }
-
         if (b.popped) {
           b.popProgress = (b.popProgress + 0.08).clamp(0.0, 1.0);
-          if (b.popProgress >= 1.0) {
-            b.removed = true;
-          }
+          if (b.popProgress >= 1.0) b.removed = true;
         }
       }
-
       bubbles.removeWhere((b) => b.removed || b.y < -120);
     });
   }
 
   void popBubble(_Bubble bubble) {
-    if (!gameRunning) return;
-    if (bubble.popped) return;
-
+    if (!gameRunning || bubble.popped) return;
     setState(() {
       bubble.popped = true;
       bubble.popProgress = 0.0;
@@ -180,11 +187,10 @@ class _BubblePopPageState extends State<BubblePopPage> {
     screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("බුබුළු පුපුරවන්න"),
-      ),
+      appBar: AppBar(title: const Text('බුබුළු පුපුරවන්න')),
       body: Stack(
         children: [
+          // Background gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -195,10 +201,12 @@ class _BubblePopPageState extends State<BubblePopPage> {
             ),
           ),
 
+          // Bubbles
           ...bubbles.map((bubble) {
-            final double scale = bubble.popped ? (1.0 + 0.9 * bubble.popProgress) : 1.0;
-            final double opacity = bubble.popped ? (1.0 - bubble.popProgress) : 1.0;
-
+            final double scale =
+                bubble.popped ? (1.0 + 0.9 * bubble.popProgress) : 1.0;
+            final double opacity =
+                bubble.popped ? (1.0 - bubble.popProgress) : 1.0;
             return Positioned(
               left: bubble.x,
               top: bubble.y,
@@ -215,9 +223,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
                         shape: BoxShape.circle,
                         color: bubble.color,
                         border: Border.all(
-                          color: bubble.borderColor,
-                          width: 2,
-                        ),
+                            color: bubble.borderColor, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: bubble.borderColor.withValues(alpha: 0.45),
@@ -244,17 +250,13 @@ class _BubblePopPageState extends State<BubblePopPage> {
             );
           }),
 
+          // HUD
           Positioned(
-            top: 20,
-            left: 20,
-            child: _InfoBox("ලකුණු : $score"),
-          ),
+              top: 20, left: 20, child: _InfoBox('ලකුණු : $score')),
           Positioned(
-            top: 20,
-            right: 20,
-            child: _InfoBox("වේලාව : $timeLeft"),
-          ),
+              top: 20, right: 20, child: _InfoBox('වේලාව : $timeLeft')),
 
+          // Start button
           if (!gameRunning && timeLeft > 0 && !_isLoading)
             Center(
               child: ElevatedButton(
@@ -263,10 +265,11 @@ class _BubblePopPageState extends State<BubblePopPage> {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: startGame,
-                child: const Text("ක්‍රීඩාව ආරම්භ කරන්න"),
+                child: const Text('ක්‍රීඩාව ආරම්භ කරන්න'),
               ),
             ),
 
+          // Game over card
           if (!gameRunning && timeLeft == 0 && !_isLoading)
             Center(
               child: Card(
@@ -277,47 +280,50 @@ class _BubblePopPageState extends State<BubblePopPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        "වේලාව අවසන්!",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        'වේලාව අවසන්!',
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 10),
-                      Text("ඔබගේ ලකුණු: $score"),
+                      Text('ඔබගේ ලකුණු: $score'),
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed:
-                              _isSubmitting ? null : () => _submitScore(context),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => _submitLeaderboardScore(context),
                           child: _isSubmitting
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
                                 )
-                              : const Text("Submit Score"),
+                              : const Text('ලකුණු ඉදිරිපත් කරන්න'),
                         ),
                       ),
                       const SizedBox(height: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(76, 175, 80, 1),
+                          backgroundColor:
+                              const Color.fromRGBO(76, 175, 80, 1),
                           foregroundColor: Colors.white,
                         ),
-                        onPressed: () async {
-                          await startGame();
-                        },
-                        child: const Text("නැවත ක්‍රීඩා කරන්න"),
-                      )
+                        onPressed: () async => startGame(),
+                        child: const Text('නැවත ක්‍රීඩා කරන්න'),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
 
+          // Loading overlay
           if (_isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 child: const Center(
                   child: CircularProgressIndicator(
                     color: Color.fromRGBO(76, 175, 80, 1),
@@ -330,76 +336,62 @@ class _BubblePopPageState extends State<BubblePopPage> {
     );
   }
 
-  Future<void> _submitScore(BuildContext context) async {
+  Future<void> _submitLeaderboardScore(BuildContext context) async {
     if (_isSubmitting) return;
 
     final nameController = TextEditingController();
-    final levelController = TextEditingController(text: "1");
+    final levelController = TextEditingController(text: '1');
     final formKey = GlobalKey<FormState>();
 
     try {
       final result = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: const Text("Submit Score"),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: "Player Name"),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Enter player name";
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: levelController,
-                    decoration: const InputDecoration(labelText: "Level"),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      final parsed = int.tryParse(value ?? "");
-                      if (parsed == null) {
-                        return "Enter a valid level";
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ලකුණු ඉදිරිපත් කරන්න'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration:
+                      const InputDecoration(labelText: 'ක්‍රීඩකයාගේ නම'),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'නම ඇතුළත් කරන්න'
+                      : null,
+                ),
+                TextFormField(
+                  controller: levelController,
+                  decoration:
+                      const InputDecoration(labelText: 'මට්ටම'),
+                  keyboardType: TextInputType.number,
+                  validator: (v) =>
+                      (int.tryParse(v ?? '') == null) ? 'වලංගු මට්ටමක් ඇතුළත් කරන්න' : null,
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (!(formKey.currentState?.validate() ?? false)) {
-                    return;
-                  }
-                  Navigator.pop(dialogContext, true);
-                },
-                child: const Text("Submit"),
-              ),
-            ],
-          );
-        },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('අවලංගු කරන්න'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!(formKey.currentState?.validate() ?? false)) return;
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('ඉදිරිපත් කරන්න'),
+            ),
+          ],
+        ),
       );
 
       if (result != true) return;
-
-      setState(() {
-        _isSubmitting = true;
-      });
+      setState(() => _isSubmitting = true);
 
       final timePlayed = (30 - timeLeft).clamp(0, 30).toDouble();
-
       await LeaderboardService.createEntry(
         playerName: nameController.text.trim(),
         score: score,
@@ -409,25 +401,22 @@ class _BubblePopPageState extends State<BubblePopPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Score submitted.")),
+        const SnackBar(content: Text('ලකුණු ඉදිරිපත් කරන ලදී.')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Submit failed: $e")),
+        SnackBar(content: Text('ඉදිරිපත් කිරීම අසාර්ථකයි: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+      if (mounted) setState(() => _isSubmitting = false);
       nameController.dispose();
       levelController.dispose();
     }
   }
-
 }
+
+// ── Data model ─────────────────────────────────────────────────────────────
 
 class _Bubble {
   final int id;
@@ -454,9 +443,10 @@ class _Bubble {
   });
 }
 
+// ── HUD widget ─────────────────────────────────────────────────────────────
+
 class _InfoBox extends StatelessWidget {
   final String text;
-
   const _InfoBox(this.text);
 
   @override
@@ -466,26 +456,13 @@ class _InfoBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color.fromRGBO(76, 175, 80, 1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Text(
         text,
         style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+            fontWeight: FontWeight.bold, color: Colors.white),
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
-

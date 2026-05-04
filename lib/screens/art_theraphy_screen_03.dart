@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:my_first_app/screens/drawing_board_page.dart';
 
 class ArtTherapyStep3Screen extends StatefulWidget {
@@ -35,6 +37,25 @@ class _ArtTherapyStep3ScreenState extends State<ArtTherapyStep3Screen> {
       _isLoading = true;
     });
 
+    final prefs = await SharedPreferences.getInstance();
+    final childId = prefs.getString('child_id') ?? '';
+
+    if (childId.isEmpty) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('දරුවාගේ හැඳුනුම් අංකය හමු නොවීය. නැවත login වන්න.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (!mounted) return;
@@ -42,7 +63,7 @@ class _ArtTherapyStep3ScreenState extends State<ArtTherapyStep3Screen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const DrawingBoardPage(childId: 1),
+        builder: (context) => DrawingBoardPage(childId: childId),
       ),
     );
 
@@ -84,7 +105,7 @@ class _ArtTherapyStep3ScreenState extends State<ArtTherapyStep3Screen> {
                   const Text(
                     "සුදු කඩදාසි පත්‍රයක් ගෙන, ඔබ අත්විඳි දේවල් ඇඳිමින් ප්‍රකාශ කරන්න.\n"
                     "අද ඔබට දැනෙන හැඟීම්වලට ගැලපෙන වර්ණ තෝරන්න.\n"
-                    "සිතුවම් පුවරුව භාවිතා  “Continue” බොත්තම ඔබන්න.",
+                    "සිතුවම් පුවරුව භාවිතා කිරීමට “Continue” බොත්තම ඔබන්න.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 20,
