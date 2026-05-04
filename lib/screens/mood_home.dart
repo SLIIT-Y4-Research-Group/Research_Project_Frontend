@@ -96,7 +96,7 @@ class _MoodHomeState extends State<MoodHome> {
         if (data['completed'] == true && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.'),
+              content: Text('ඔයා අද mood check එක කරලා ඉවරයි!'),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
@@ -711,7 +711,7 @@ class _MoodHomeState extends State<MoodHome> {
       if (answeredCount < 3) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("අවසාන ප්‍රශ්නය මග හැරීමට, අවම වශයෙන් පළමු ප්‍රශ්න 3කට පිළිතුරු දෙන්න."),
+            content: Text("අද දවසේ ඔයාගේ mood එක බලන්න අඩුම ප්‍රශ්න 3කට උත්තර දෙන්න."),
             duration: Duration(seconds: 3),
             backgroundColor: Colors.orange,
           ),
@@ -1353,6 +1353,42 @@ class _MoodHomeState extends State<MoodHome> {
 
   Future<void> handleSubmitAll() async {
     final currentAnswer = questions[currentQuestionIndex].answer.trim();
+    final bool isLastQuestion = currentQuestionIndex == questions.length - 1;
+
+    if (isLastQuestion && currentAnswer.isEmpty) {
+      int answeredCount = 0;
+      for (int i = 0; i < questions.length; i++) {
+        if (!questions[i].skipped && questions[i].answer.trim().isNotEmpty) {
+          answeredCount++;
+        }
+      }
+
+      if (answeredCount >= 3) {
+        setState(() {
+          questions[currentQuestionIndex].skipped = true;
+          questions[currentQuestionIndex].answer = "";
+          questions[currentQuestionIndex].mood = "";
+          liveTranscript = "";
+          _accumulatedTranscript = "";
+          _finalTranscript = "";
+          _currentPartialTranscript = "";
+          _transcriptController.clear();
+        });
+        await submitAllAnswers();
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "අවසාන ප්‍රතිඵලය ලබාගන්න, පළමු ප්‍රශ්නයට සහ තවත් ප්‍රශ්න 2කටවත් පිළිතුරු දෙන්න.",
+          ),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     final validation = await validateAnswer(currentQuestionIndex + 1, currentAnswer);
 

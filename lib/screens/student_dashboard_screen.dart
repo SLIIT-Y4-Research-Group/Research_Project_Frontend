@@ -146,7 +146,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     if (_todayCompleted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.'),
+          content: Text('ඔයා අද mood check එක කරලා ඉවරයි!'),
           backgroundColor: Colors.orange,
           duration: Duration(seconds: 3),
         ),

@@ -483,132 +483,147 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
             borderRadius: BorderRadius.circular(20),
           ),
           backgroundColor: _cardColor,
-          child: Container(
-            width: 500,
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Invite Trusted Contact',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryTextColor,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(dialogContext),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final size = MediaQuery.of(context).size;
+              final isSmallScreen = size.width < 600;
+              final dialogWidth = isSmallScreen ? size.width * 0.92 : 520.0;
+              final dialogHeight = size.height * 0.85;
+
+              return ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: dialogWidth,
+                  maxHeight: dialogHeight,
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  'Email Address',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _primaryTextColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  enabled: !isInviting,
-                  style: GoogleFonts.inter(color: _primaryTextColor),
-                  decoration: InputDecoration(
-                    hintText: 'contact@email.com',
-                    hintStyle: TextStyle(
-                      color: _secondaryTextColor.withValues(alpha: 0.6),
-                    ),
-                    filled: true,
-                    fillColor: _dialogFieldFillColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Relationship',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _primaryTextColor,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: _dialogFieldFillColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedRelationship,
-                      isExpanded: true,
-                      dropdownColor: _cardColor,
-                      hint: Text(
-                        'Select relationship',
-                        style: TextStyle(
-                          color: _secondaryTextColor.withValues(alpha: 0.6),
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Invite Trusted Contact',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: _primaryTextColor,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(dialogContext),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
                         ),
-                      ),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: _secondaryTextColor,
-                      ),
-                      style: GoogleFonts.inter(
-                        color: _primaryTextColor,
-                        fontSize: 14,
-                      ),
-                      items: relationshipOptions.map((value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: isInviting
-                          ? null
-                          : (String? newValue) {
-                              setLocalState(() {
-                                selectedRelationship = newValue;
-                              });
-                            },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'They will receive an email and must accept to connect.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: isInviting
-                        ? null
-                        : () async {
+                        const SizedBox(height: 24),
+                        Text(
+                          'Email Address',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: _primaryTextColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          enabled: !isInviting,
+                          style: GoogleFonts.inter(color: _primaryTextColor),
+                          decoration: InputDecoration(
+                            hintText: 'contact@email.com',
+                            hintStyle: TextStyle(
+                              color: _secondaryTextColor.withValues(alpha: 0.6),
+                            ),
+                            filled: true,
+                            fillColor: _dialogFieldFillColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Relationship',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: _primaryTextColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: _dialogFieldFillColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedRelationship,
+                              isExpanded: true,
+                              dropdownColor: _cardColor,
+                              hint: Text(
+                                'Select relationship',
+                                style: TextStyle(
+                                  color: _secondaryTextColor.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              icon: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: _secondaryTextColor,
+                              ),
+                              style: GoogleFonts.inter(
+                                color: _primaryTextColor,
+                                fontSize: 14,
+                              ),
+                              items: relationshipOptions.map((value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: isInviting
+                                  ? null
+                                  : (String? newValue) {
+                                      setLocalState(() {
+                                        selectedRelationship = newValue;
+                                      });
+                                    },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'They will receive an email and must accept to connect.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed: isInviting
+                                ? null
+                                : () async {
                             if (emailController.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -684,13 +699,16 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                             ),
                           )
                         : const Icon(Icons.email_outlined, size: 20),
-                    label: Text(
-                      isInviting ? 'Sending...' : 'Send Invitation Email',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                isInviting ? 'Sending...' : 'Send Invitation Email',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF43A047),
                       foregroundColor: Colors.white,
@@ -699,10 +717,14 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                       ),
                       elevation: 0,
                     ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -1012,10 +1034,26 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-      decoration: BoxDecoration(
-        color: _headerColor,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 600;
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 20 : 32,
+            vertical: isCompact ? 20 : 24,
+          ),
+          decoration: BoxDecoration(
+        color: _isDarkMode ? _headerColor : null,
+        gradient: _isDarkMode
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF1F8F4),
+                  Color(0xFFF7FBF8),
+                ],
+              ),
         border: Border(
           bottom: BorderSide(
             color: _borderColor,
@@ -1036,91 +1074,194 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
             ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Dashboard',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryTextColor,
-                  letterSpacing: -0.5,
+          child: isCompact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dashboard',
+                      style: GoogleFonts.inter(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: _primaryTextColor,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Manage your child profiles and trusted contacts',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: _secondaryTextColor.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _isDarkMode = !_isDarkMode;
+                              });
+                            },
+                            icon: Icon(
+                              _isDarkMode
+                                  ? Icons.light_mode_outlined
+                                  : Icons.dark_mode_outlined,
+                              size: 22,
+                            ),
+                            tooltip: _isDarkMode
+                                ? 'Disable dark mode'
+                                : 'Enable dark mode',
+                            style: IconButton.styleFrom(
+                              foregroundColor: _isDarkMode
+                                  ? const Color(0xFFFBBF24)
+                                  : const Color(0xFF6B7280),
+                              backgroundColor: _isDarkMode
+                                  ? const Color(0xFFFBBF24)
+                                      .withValues(alpha: 0.10)
+                                  : const Color(0xFFF3F4F6),
+                              padding: const EdgeInsets.all(12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: _logout,
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: Text(
+                            'Logout',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF43A047),
+                            side: const BorderSide(
+                              color: Color(0xFF43A047),
+                              width: 1.5,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Dashboard',
+                            style: GoogleFonts.inter(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: _primaryTextColor,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: Text(
+                              'Manage your child profiles and trusted contacts',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: _secondaryTextColor.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isDarkMode = !_isDarkMode;
+                            });
+                          },
+                          icon: Icon(
+                            _isDarkMode
+                                ? Icons.light_mode_outlined
+                                : Icons.dark_mode_outlined,
+                            size: 22,
+                          ),
+                          tooltip: _isDarkMode
+                              ? 'Disable dark mode'
+                              : 'Enable dark mode',
+                          style: IconButton.styleFrom(
+                            foregroundColor: _isDarkMode
+                                ? const Color(0xFFFBBF24)
+                                : const Color(0xFF6B7280),
+                            backgroundColor: _isDarkMode
+                                ? const Color(0xFFFBBF24)
+                                    .withValues(alpha: 0.10)
+                                : const Color(0xFFE8F5E9)
+                                    .withValues(alpha: 0.50),
+                            padding: const EdgeInsets.all(12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: _logout,
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: Text(
+                            'Logout',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF43A047),
+                            side: const BorderSide(
+                              color: Color(0xFF43A047),
+                              width: 1.5,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Manage your child profiles and trusted contacts',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: _secondaryTextColor,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _isDarkMode = !_isDarkMode;
-                  });
-                },
-                icon: Icon(
-                  _isDarkMode
-                      ? Icons.light_mode_outlined
-                      : Icons.dark_mode_outlined,
-                  size: 22,
-                ),
-                tooltip:
-                    _isDarkMode ? 'Disable dark mode' : 'Enable dark mode',
-                style: IconButton.styleFrom(
-                  foregroundColor: _isDarkMode
-                      ? const Color(0xFFFBBF24)
-                      : const Color(0xFF6B7280),
-                  backgroundColor: _isDarkMode
-                      ? const Color(0xFFFBBF24).withValues(alpha: 0.10)
-                      : const Color(0xFFE8F5E9).withValues(alpha: 0.50),
-                  padding: const EdgeInsets.all(12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout, size: 18),
-                label: Text(
-                  'Logout',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF43A047),
-                  side: const BorderSide(
-                    color: Color(0xFF43A047),
-                    width: 1.5,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1166,10 +1307,20 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
   }
 
   Widget _buildChildrenCard() {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 600;
+        final maxCardWidth = isCompact
+          ? constraints.maxWidth
+          : (constraints.maxWidth > 720 ? 700.0 : constraints.maxWidth);
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxCardWidth),
+            child: Container(
+              margin: EdgeInsets.all(isCompact ? 16 : 20),
+              padding: EdgeInsets.all(isCompact ? 20 : 28),
+              decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
@@ -1190,47 +1341,113 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
             ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'My Children',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: _primaryTextColor,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _showAddChildDialog,
-                icon: const Icon(Icons.add, size: 18),
-                label: Text(
-                  'Add Child',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF43A047),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ],
-          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isCompact)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Children',
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: _primaryTextColor,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${_children.length} children',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: _secondaryTextColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: _showAddChildDialog,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: Text(
+                              'Add Child',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF43A047),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'My Children',
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: _primaryTextColor,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${_children.length} children',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: _secondaryTextColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _showAddChildDialog,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(
+                            'Add Child',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF43A047),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ),
           const SizedBox(height: 24),
           if (_children.isEmpty)
             Center(
@@ -1283,8 +1500,12 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                 return _buildChildTile(child);
               },
             ),
-        ],
-      ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1350,9 +1571,13 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Flexible(
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 180),
                         child: Text(
                           name,
                           style: GoogleFonts.inter(
@@ -1360,10 +1585,10 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                             fontWeight: FontWeight.bold,
                             color: _primaryTextColor,
                           ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
                       _buildStatusChip('Active', true),
                     ],
                   ),
@@ -1374,6 +1599,8 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                       fontSize: 13,
                       color: _secondaryTextColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -1465,262 +1692,418 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
     final username = (_selectedChild!['username'] ?? 'N/A').toString();
     final alertConsent = _selectedChild!['alerts_consent'] == true;
 
-    return Container(
-      margin: const EdgeInsets.only(top: 20, right: 20, bottom: 20),
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: _cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _borderColor,
-              width: _isDarkMode ? 1 : 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isDarkMode ? 0.3 : 0.05),
-                blurRadius: _isDarkMode ? 20 : 24,
-                offset: Offset(0, _isDarkMode ? 4 : 6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 700;
+        final maxCardWidth = constraints.maxWidth > 900 ? 780.0 : constraints.maxWidth;
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxCardWidth),
+            child: Container(
+              margin: EdgeInsets.only(
+                top: isCompact ? 12 : 20,
+                right: isCompact ? 16 : 20,
+                bottom: 20,
+                left: isCompact ? 16 : 0,
               ),
-              if (!_isDarkMode)
-                BoxShadow(
-                  color: const Color(0xFF43A047).withValues(alpha: 0.03),
-                  blurRadius: 16,
-                  offset: const Offset(0, 2),
-                ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: EdgeInsets.all(isCompact ? 20 : 32),
+                  decoration: BoxDecoration(
+                    color: _cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: _borderColor,
+                      width: _isDarkMode ? 1 : 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                            alpha: _isDarkMode ? 0.3 : 0.05),
+                        blurRadius: _isDarkMode ? 20 : 24,
+                        offset: Offset(0, _isDarkMode ? 4 : 6),
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
+                      if (!_isDarkMode)
                         BoxShadow(
-                          color: const Color(0xFF43A047).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          color:
+                              const Color(0xFF43A047).withValues(alpha: 0.03),
+                          blurRadius: 16,
+                          offset: const Offset(0, 2),
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: _primaryTextColor,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '@$username',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: _secondaryTextColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildInfoChip(Icons.cake_outlined, 'Age $age'),
-                  _buildInfoChip(
-                    alertConsent
-                        ? Icons.notifications_active
-                        : Icons.notifications_off,
-                    alertConsent ? 'Alerts ON' : 'Alerts OFF',
-                    isAlert: true,
-                    alertStatus: alertConsent,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Divider(color: _dividerColor, height: 1),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Trusted Contacts',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: _primaryTextColor,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ParentDrawingsScreen(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'View Child Drawings',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _selectedChildId == null
-                            ? null
-                            : () => _showInviteTrustedDialog(_selectedChildId!),
-                        icon: const Icon(Icons.person_add, size: 18),
-                        label: Text(
-                          'Invite',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF43A047),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _selectedChildId == null
-                            ? null
-                            : () => _loadTrustedContacts(_selectedChildId!),
-                        icon: const Icon(Icons.refresh, size: 22),
-                        tooltip: 'Refresh status',
-                        style: IconButton.styleFrom(
-                          backgroundColor: const Color(0xFFF3F4F6),
-                          foregroundColor: const Color(0xFF6B7280),
-                          padding: const EdgeInsets.all(14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (_trustedContacts.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: _emptyStateIconBg,
-                            borderRadius: BorderRadius.circular(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF43A047)
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                style: GoogleFonts.inter(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: Icon(
-                            Icons.people_outline,
-                            size: 40,
-                            color: _emptyStateIconColor,
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: _primaryTextColor,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '@$username',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    color: _secondaryTextColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          _buildInfoChip(Icons.cake_outlined, 'Age $age'),
+                          _buildInfoChip(
+                            alertConsent
+                                ? Icons.notifications_active
+                                : Icons.notifications_off,
+                            alertConsent ? 'Alerts ON' : 'Alerts OFF',
+                            isAlert: true,
+                            alertStatus: alertConsent,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      Divider(color: _dividerColor, height: 1),
+                      const SizedBox(height: 32),
+                      if (isCompact)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Trusted Contacts',
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: _primaryTextColor,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'People who can receive alerts and support the child',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.5,
+                                color: _secondaryTextColor,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(
+                                  height: 46,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ParentDrawingsScreen(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2563EB),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: Text(
+                                      'View Child Drawings',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 46,
+                                        child: ElevatedButton.icon(
+                                          onPressed: _selectedChildId == null
+                                              ? null
+                                              : () => _showInviteTrustedDialog(
+                                                    _selectedChildId!,
+                                                  ),
+                                          icon: const Icon(Icons.person_add, size: 18),
+                                          label: Text(
+                                            'Invite',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF43A047),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                            ),
+                                            elevation: 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    SizedBox(
+                                      width: 52,
+                                      height: 46,
+                                      child: IconButton(
+                                        onPressed: _selectedChildId == null
+                                            ? null
+                                            : () => _loadTrustedContacts(
+                                                  _selectedChildId!,
+                                                ),
+                                        icon: const Icon(Icons.refresh, size: 22),
+                                        tooltip: 'Refresh status',
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: const Color(0xFFF3F4F6),
+                                          foregroundColor: const Color(0xFF6B7280),
+                                          padding: const EdgeInsets.all(12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(14),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      else
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Trusted Contacts',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: _primaryTextColor,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'People who can receive alerts and support the child',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    color: _secondaryTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const ParentDrawingsScreen(),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2563EB),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'View Child Drawings',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                ElevatedButton.icon(
+                                  onPressed: _selectedChildId == null
+                                      ? null
+                                      : () => _showInviteTrustedDialog(
+                                            _selectedChildId!,
+                                          ),
+                                  icon: const Icon(Icons.person_add, size: 18),
+                                  label: Text(
+                                    'Invite',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF43A047),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: _selectedChildId == null
+                                      ? null
+                                      : () =>
+                                          _loadTrustedContacts(_selectedChildId!),
+                                  icon: const Icon(Icons.refresh, size: 22),
+                                  tooltip: 'Refresh status',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: const Color(0xFFF3F4F6),
+                                    foregroundColor: const Color(0xFF6B7280),
+                                    padding: const EdgeInsets.all(14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No trusted contacts yet',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: _secondaryTextColor,
+                      const SizedBox(height: 20),
+                      if (_trustedContacts.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: _emptyStateIconBg,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    Icons.people_outline,
+                                    size: 40,
+                                    color: _emptyStateIconColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No trusted contacts yet',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: _secondaryTextColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Invite trusted contacts to monitor',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: _emptyStateIconColor,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Invite trusted contacts to monitor',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: _emptyStateIconColor,
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _trustedContacts.length,
+                          separatorBuilder: (context, index) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Divider(color: _dividerColor, height: 1),
                           ),
+                          itemBuilder: (context, index) {
+                            final contact = _trustedContacts[index];
+                            return _buildTrustedContactRow(contact);
+                          },
                         ),
-                      ],
-                    ),
+                    ],
                   ),
-                )
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _trustedContacts.length,
-                  separatorBuilder: (context, index) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(color: _dividerColor, height: 1),
-                  ),
-                  itemBuilder: (context, index) {
-                    final contact = _trustedContacts[index];
-                    return _buildTrustedContactRow(contact);
-                  },
                 ),
-            ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -1780,60 +2163,10 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isAccepted
-                        ? const Color(0xFFF0F9F2)
-                        : const Color(0xFFFEF3E0),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person_outline,
-                      size: 22,
-                      color: isAccepted
-                          ? const Color(0xFF43A047)
-                          : const Color(0xFFF59E0B),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        email,
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: _primaryTextColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        relationship,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: _secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 520;
+          final statusBadge = Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: isAccepted
@@ -1852,9 +2185,9 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
                 letterSpacing: 0.3,
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Container(
+          );
+
+          final deleteButton = Container(
             decoration: BoxDecoration(
               color: Colors.red.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
@@ -1873,8 +2206,153 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> with Widg
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(),
             ),
-          ),
-        ],
+          );
+
+          return isCompact
+              ? Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _isDarkMode
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFFF8FCF9),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isAccepted
+                                  ? const Color(0xFFF0F9F2)
+                                  : const Color(0xFFFEF3E0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.person_outline,
+                                size: 22,
+                                color: isAccepted
+                                    ? const Color(0xFF43A047)
+                                    : const Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  email,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: _primaryTextColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  relationship,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: _secondaryTextColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [statusBadge, deleteButton],
+                      ),
+                    ],
+                  ),
+                )
+              : Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _isDarkMode
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFFF8FCF9),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _borderColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: isAccepted
+                                    ? const Color(0xFFF0F9F2)
+                                    : const Color(0xFFFEF3E0),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.person_outline,
+                                  size: 22,
+                                  color: isAccepted
+                                      ? const Color(0xFF43A047)
+                                      : const Color(0xFFF59E0B),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    email,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: _primaryTextColor,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    relationship,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: _secondaryTextColor,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      statusBadge,
+                      const SizedBox(width: 8),
+                      deleteButton,
+                    ],
+                  ),
+                );
+        },
       ),
     );
   }
