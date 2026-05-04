@@ -3,7 +3,7 @@ class ApiConfig {
   // Backend API Base URL
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.180.12:8000',
+    defaultValue: 'http://127.0.0.1:8000',
   );
 
   static const String emotionPredictImage = '$baseUrl/emotion/predict-image';
