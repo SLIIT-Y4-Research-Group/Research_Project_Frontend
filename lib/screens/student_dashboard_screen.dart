@@ -214,28 +214,79 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FBF8),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4EAA57),
+        backgroundColor: const Color(0xFFE8F5E9),
         elevation: 0,
         title: const Text(
           'My Profile',
           style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
           ),
         ),
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF4EAA57),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF4FBF6),
+              Color(0xFFE8F5E9),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Decorative background circles
+            Positioned(
+              top: -50,
+              right: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF66BB6A).withOpacity(0.08),
+                ),
               ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadStudentDashboard,
-              child: SingleChildScrollView(
+            ),
+            Positioned(
+              top: 100,
+              left: -30,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF66BB6A).withOpacity(0.05),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 250,
+              right: 20,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF66BB6A).withOpacity(0.06),
+                ),
+              ),
+            ),
+            _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF4EAA57),
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadStudentDashboard,
+                    child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -260,6 +311,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
     );
   }
 

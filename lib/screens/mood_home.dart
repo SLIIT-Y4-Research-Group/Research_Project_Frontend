@@ -78,13 +78,43 @@ class _MoodHomeState extends State<MoodHome> {
     super.initState();
     questions = [
       Question(" අද ඉස්කෝලේ ගත කරපු කාලය ගැන ඔයාට මොකද හිතෙන්නේ? "),
-      Question(" අද ඉස්කෝලේ ගුරුවරු එක්ක හරි යාළුවො එක්ක හරි ගැටලුවක් ඇතිවුණාද?"),
-      Question(" අද පාඩම් වැඩ, homework හරි exam හරි නිසා ආතතියක් තිබුණාද?"),
+      Question(" අද ඉස්කෝලේ ගුරුවරු එක්ක හරි යාළුවො එක්ක හරි ප්‍රශ්නයක් ඇතිවුණාද?"),
+      Question(" අද පාඩම් වැඩ, homework හරි exam හරි නිසා ඔයා stress වෙලාද ඉන්නෙ?"),
       Question(" අද ඔයාට හුඟාක් මහන්සිද? අද විවේකයක් නැතිවම ද හිටියේ?"),
       Question(" අද ඔයාට සතුටු වෙන්න පුළුවන් මොකක් හරි හේතුවක් තියෙනවද?"),    
     ];
     _initSpeech();
     _checkUserTypeAndLoadConsent();
+    _checkAndAlertIfAlreadyCompleted();  // Add defensive check
+  }
+  
+  Future<void> _checkAndAlertIfAlreadyCompleted() async {
+    try {
+      final response = await ApiClient.getTodayMoodStatus();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['completed'] == true) {
+          print('[MOOD] WARNING: Already completed today - should not be on this screen');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            // Optional: Navigate back to prevent recording
+            // Uncomment below to force navigation back:
+            // Future.delayed(const Duration(seconds: 1), () {
+            //   if (mounted) Navigator.pop(context);
+            // });
+          }
+        }
+      }
+    } catch (e) {
+      print('[MOOD] Error checking completion status: $e');
+      // Continue anyway - don't block user if API fails
+    }
   }
   
   Future<void> _checkUserTypeAndLoadConsent() async {
@@ -300,21 +330,41 @@ class _MoodHomeState extends State<MoodHome> {
                 Navigator.of(dialogContext).pop();
                 
                 try {
+                  print("[MOOD] ===== ALERT PERMISSION APPROVED =====");
                   print("[MOOD] Student approved alert permission");
-                  await ApiClient.respondAlertPermission(approve: true);
-                  print("[MOOD] Approval response sent to backend");
+                  print("[MOOD] Sending approval to backend...");
                   
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('ඔබේ භාරකරුට දැනුම්දීම යවන ලදී ✓'),
-                        duration: Duration(seconds: 3),
-                        backgroundColor: Color(0xFF22C55E),
-                      ),
-                    );
+                  final response = await ApiClient.respondAlertPermission(approve: true);
+                  
+                  print("[MOOD] Backend response status: ${response.statusCode}");
+                  print("[MOOD] Backend response body: ${response.body}");
+                  print("[MOOD] ==========================================");
+                  
+                  if (response.statusCode == 200 || response.statusCode == 201) {
+                    print("[MOOD] ✓ Backend confirmed alert permission");
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('ඔබේ භාරකරුට දැනුම්දීම යවන ලදී ✓'),
+                          duration: Duration(seconds: 3),
+                          backgroundColor: Color(0xFF22C55E),
+                        ),
+                      );
+                    }
+                  } else {
+                    print("[MOOD] ✗ Backend returned error: ${response.statusCode}");
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('දැනුම්දීම යැවීමේ දෝෂයක්: ${response.statusCode}'),
+                          duration: const Duration(seconds: 2),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
                   }
                 } catch (e) {
-                  print("[MOOD] Error sending approval response: $e");
+                  print("[MOOD] ✗ Error sending approval response: $e");
                   // Continue anyway - navigation should not break
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -919,8 +969,8 @@ class _MoodHomeState extends State<MoodHome> {
     switch (questionId) {
       case 2:
         return isYes 
-            ? "අද මට ගුරුවරු හෝ යාළුවන් සමඟ ගැටලුවක් තිබුණා"
-            : "අද මට ගුරුවරු හෝ යාළුවන් සමඟ ගැටලුවක් නැහැ";
+            ? "අද මට ගුරුවරු හෝ යාළුවන් සමඟ ප්‍රශ්නයක් තිබුණා"
+            : "අද මට ගුරුවරු හෝ යාළුවන් සමඟ ප්‍රශ්නයක් නැහැ";
       case 3:
         return isYes
             ? "අද පාඩම්, homework හෝ exam නිසා මට ආතතිය තිබුණා"
@@ -1041,20 +1091,52 @@ class _MoodHomeState extends State<MoodHome> {
           datetime: DateTime.now().toIso8601String(),
         );
         
+        print("[MOOD] ===== STORAGE RESPONSE =====");
+        print("[MOOD] Status Code: ${storageRes.statusCode}");
+        print("[MOOD] Response Body: ${storageRes.body}");
+        print("[MOOD] ============================");
+        
         if (storageRes.statusCode == 200 || storageRes.statusCode == 201) {
-          print("[MOOD] Mood stored successfully to backend");
+          final storageData = jsonDecode(storageRes.body);
+          
+          // CRITICAL: Check if backend returned "already_exists" status in body
+          // (Backend incorrectly returns 200 instead of 409)
+          if (storageData["status"] == "already_exists") {
+            print("[MOOD] ❌ Duplicate detected in response body (backend should return 409!)");
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("අද දවසේ මනෝභාවය දැනටමත් සටහන් කර ඇත."),
+                  duration: Duration(seconds: 3),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+            // STOP HERE - Do NOT navigate to result screen
+            setState(() => loadingMood = false);
+            if (mounted) {
+              Navigator.pop(context); // Go back to home
+            }
+            return;
+          }
+          
+          print("[MOOD] ✓ Mood stored successfully to backend");
           
           // Check if alert permission is needed
           try {
-            final storageData = jsonDecode(storageRes.body);
+            print("[MOOD] Checking alert permission...");
+            print("[MOOD] alert_permission_needed: ${storageData["alert_permission_needed"]}");
+            print("[MOOD] bad_mood_count: ${storageData["bad_mood_count"]}");
+            
             if (storageData["alert_permission_needed"] == true) {
               final badMoodCount = storageData["bad_mood_count"] ?? 5;
-              print("[MOOD] Alert permission needed - showing dialog (bad mood count: $badMoodCount)");
+              print("[MOOD] ✓ Alert permission needed - showing dialog (bad mood count: $badMoodCount)");
               
               // Show permission dialog before navigating to result screen
               await _showAlertPermissionDialog(badMoodCount: badMoodCount);
             } else {
-              print("[MOOD] No alert permission needed");
+              print("[MOOD] ℹ No alert permission needed (backend says false)");
+              print("[MOOD] ⚠️ WARNING: If this is a Bad mood, backend should track consecutive bad moods!");
             }
           } catch (parseError) {
             print("[MOOD] Could not parse storage response for alert check: $parseError");
@@ -1352,22 +1434,6 @@ Widget build(BuildContext context) {
                               ),
                             ],
                           ),
-                          // Settings and logout buttons (only for logged in child users)
-                          if (_isChildUser)
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.settings, color: Colors.white),
-                                  onPressed: _showConsentDialog,
-                                  tooltip: 'Alert Settings',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.logout, color: Colors.white),
-                                  onPressed: _logout,
-                                  tooltip: 'Logout',
-                                ),
-                              ],
-                            ),
                         ],
                       ),
                       const SizedBox(height: 20),

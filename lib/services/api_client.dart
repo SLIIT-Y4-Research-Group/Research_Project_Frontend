@@ -195,4 +195,28 @@ class ApiClient {
     print('[API] getWeeklyMoods - Status: ${response.statusCode}, Body: ${response.body}');
     return response;
   }
+
+  // Mark First Login Prompt as Seen (Child)
+  static Future<http.Response> markFirstLoginPromptSeen() async {
+    return await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/child/me/first-login-seen'),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode({}),
+    );
+  }
+
+  // Reset Child Password (Child)
+  static Future<http.Response> resetChildPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return await http.patch(  // Changed from POST to PATCH
+      Uri.parse('${ApiConfig.baseUrl}/child/me/reset-password'),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode({
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      }),
+    );
+  }
 }
