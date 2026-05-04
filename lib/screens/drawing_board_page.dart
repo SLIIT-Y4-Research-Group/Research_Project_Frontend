@@ -13,6 +13,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/api_config.dart';
+
 import 'dart:io' as io;
 
 import 'bubble_pop_page.dart';
