@@ -43,7 +43,6 @@ class _OnboardingLottieScreenState extends State<OnboardingLottieScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       body: Stack(
         children: [
           Positioned.fill(

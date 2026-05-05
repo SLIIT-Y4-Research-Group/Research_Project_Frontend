@@ -127,74 +127,87 @@ class _WeatherPickerState extends State<WeatherPicker> {
     required Map<String, dynamic> weather,
     required bool isSelected,
   }) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedWeather = weatherKey;
-        });
-        widget.onWeatherSelected(weatherKey);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? weather['color'].withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? weather['color'] : Colors.grey[200]!,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(isSelected ? 0.1 : 0.05),
-              blurRadius: isSelected ? 8 : 4,
-              offset: Offset(0, isSelected ? 4 : 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Emoji
-            Text(
-              weather['emoji'],
-              style: TextStyle(fontSize: 36),
-            ),
-            
-            SizedBox(height: 8),
-            
-            // Sinhala name
-            Text(
-              weather['sinhala'],
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? weather['color'] : Colors.grey[800],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxHeight < 150;
+        final verticalGap = isCompact ? 4.0 : 8.0;
+        final englishGap = isCompact ? 2.0 : 4.0;
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedWeather = weatherKey;
+            });
+            widget.onWeatherSelected(weatherKey);
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: isCompact ? 8 : 12),
+            decoration: BoxDecoration(
+              color: isSelected ? weather['color'].withOpacity(0.1) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? weather['color'] : Colors.grey[200]!,
+                width: isSelected ? 2 : 1,
               ),
-            ),
-            
-            SizedBox(height: 4),
-            
-            // English name
-            Text(
-              weather['english'],
-              style: TextStyle(
-                fontSize: 12,
-                color: isSelected ? weather['color'].withOpacity(0.8) : Colors.grey[600],
-              ),
-            ),
-            
-            // Selection indicator
-            if (isSelected)
-              Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Icon(
-                  Icons.check_circle,
-                  color: weather['color'],
-                  size: 20,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(isSelected ? 0.1 : 0.05),
+                  blurRadius: isSelected ? 8 : 4,
+                  offset: Offset(0, isSelected ? 4 : 2),
                 ),
-              ),
-          ],
-        ),
-      ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  weather['emoji'],
+                  style: TextStyle(fontSize: isCompact ? 32 : 36),
+                ),
+                SizedBox(height: verticalGap),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      weather['sinhala'],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? weather['color'] : Colors.grey[800],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: englishGap),
+                Flexible(
+                  child: Text(
+                    weather['english'],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: isCompact ? 11 : 12,
+                      color: isSelected
+                          ? weather['color'].withOpacity(0.8)
+                          : Colors.grey[600],
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Padding(
+                    padding: EdgeInsets.only(top: isCompact ? 6 : 8),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: weather['color'],
+                      size: isCompact ? 18 : 20,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
   

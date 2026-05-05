@@ -205,7 +205,6 @@ class _ChildDrawingGalleryScreenState extends State<ChildDrawingGalleryScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
@@ -310,16 +309,16 @@ class _ChildDrawingGalleryScreenState extends State<ChildDrawingGalleryScreen> {
                                 onClear: _clearDate,
                               )
                             : GridView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 4, 16, 28),
-                                itemCount: visibleDrawings.length,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  crossAxisSpacing: 18,
-                                  mainAxisSpacing: 18,
-                                  childAspectRatio: width < 380 ? 0.74 : 0.78,
-                                ),
+                              padding:
+                                const EdgeInsets.fromLTRB(16, 4, 16, 28),
+                              itemCount: visibleDrawings.length,
+                              gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: 18,
+                                mainAxisSpacing: 18,
+                                childAspectRatio: width < 380 ? 0.68 : 0.76,
+                              ),
                                 itemBuilder: (context, index) {
                                   final item = visibleDrawings[index];
                                   final imageUrl = _imageUrl(item);
@@ -400,146 +399,157 @@ class _GalleryCardState extends State<_GalleryCard>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapCancel: () => _controller.reverse(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: widget.emotionColor.withOpacity(0.25),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: widget.emotionColor.withOpacity(0.12),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(26),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Hero(
-                          tag: widget.heroTag,
-                          child: Image.network(
-                            widget.imageUrl,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) {
-                              if (progress == null) return child;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact =
+            constraints.maxHeight < 220 || MediaQuery.of(context).size.width < 380;
+        final bottomPadding =
+            isCompact ? const EdgeInsets.fromLTRB(12, 10, 12, 12) : const EdgeInsets.fromLTRB(14, 12, 14, 14);
+        final bottomSpacing = isCompact ? 6.0 : 8.0;
+        final dateStyle = TextStyle(
+          color: const Color(0xFF1F2937),
+          fontSize: isCompact ? 12 : 13,
+          fontWeight: FontWeight.w700,
+        );
 
-                              return Container(
-                                color: const Color(0xFFF3F4F6),
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFF22C55E),
+        return GestureDetector(
+          onTapDown: (_) => _controller.forward(),
+          onTapCancel: () => _controller.reverse(),
+          onTapUp: (_) {
+            _controller.reverse();
+            widget.onTap();
+          },
+          child: ScaleTransition(
+            scale: _scale,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(
+                  color: widget.emotionColor.withOpacity(0.25),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.emotionColor.withOpacity(0.12),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Hero(
+                              tag: widget.heroTag,
+                              child: Image.network(
+                                widget.imageUrl,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+
+                                  return Container(
+                                    color: const Color(0xFFF3F4F6),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFF22C55E),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFF3F4F6),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image_rounded,
+                                      color: Colors.grey,
+                                      size: 36,
+                                    ),
                                   ),
                                 ),
-                              );
-                            },
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFFF3F4F6),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image_rounded,
-                                  color: Colors.grey,
-                                  size: 36,
-                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: widget.emotionColor.withOpacity(0.35),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    widget.emotionIcon,
+                                    color: widget.emotionColor,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    widget.emotionSinhala,
+                                    style: TextStyle(
+                                      color: widget.emotionColor,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: double.infinity,
+                      padding: bottomPadding,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.date,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: dateStyle,
+                          ),
+                          SizedBox(height: bottomSpacing),
+                          Container(
+                            height: 3,
+                            decoration: BoxDecoration(
                               color: widget.emotionColor.withOpacity(0.35),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                widget.emotionIcon,
-                                color: widget.emotionColor,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                widget.emotionSinhala,
-                                style: TextStyle(
-                                  color: widget.emotionColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.date,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF1F2937),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: widget.emotionColor.withOpacity(0.35),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -562,7 +572,6 @@ class ChildDrawingViewScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       body: Stack(
         children: [
           Center(

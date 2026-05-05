@@ -203,7 +203,6 @@ class _BubblePopPageState extends State<BubblePopPage> {
     screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 2),
       appBar: AppBar(
         title: const Text('බුබුළු පුපුරවන්න'),
         backgroundColor: const Color(0xFF4EAA57),

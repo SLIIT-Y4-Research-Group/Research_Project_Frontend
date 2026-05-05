@@ -193,7 +193,6 @@ class _BalloonBreathPageState extends State<BalloonBreathPage>
     final label = _phaseLabel(_phase);
 
     return Scaffold(
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 2),
       appBar: AppBar(
         title: const Text("Balloon Breath"),
         backgroundColor: const Color(0xFF4EAA57),

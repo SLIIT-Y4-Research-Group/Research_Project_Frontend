@@ -333,7 +333,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                  'ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.',
+                  ' ඔයා අද දවසේ mood එක චෙක් කරලා ඉවරයි',
                 ),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
@@ -386,7 +386,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     final isWideScreen = screenWidth > 900;
 
     return Scaffold(
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         backgroundColor: const Color(0xFFE8F5E9),
         elevation: 0,

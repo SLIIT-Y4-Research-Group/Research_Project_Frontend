@@ -15,6 +15,7 @@ import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/api_config.dart';
 import '../widgets/child_bottom_nav_bar.dart';
 import 'balloon_breath_page.dart';
 import 'bubble_pop_page.dart';
@@ -37,8 +38,7 @@ class DrawingBoardPage extends StatefulWidget {
     super.key,
     required this.childId,
     String? baseUrl,
-  }) : baseUrl = baseUrl ??
-            (kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000');
+  }) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String childId;
   final String baseUrl;
@@ -194,7 +194,10 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     required String contentType,
     String sourceOverride = '',
   }) async {
-    final uri = Uri.parse('${widget.baseUrl}/drawing/analyze');
+    final baseUrl = _resolveBaseUrl(widget.baseUrl);
+    final uri = Uri.parse('$baseUrl/drawing/analyze');
+
+    debugPrint('Drawing analyze URL: $uri');
 
     final request = http.MultipartRequest('POST', uri);
     request.fields['child_id'] = widget.childId;
@@ -216,12 +219,11 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     http.StreamedResponse streamed;
 
     try {
-      final timeout = sourceOverride == 'drawing_board'
-          ? const Duration(seconds: 120)
-          : const Duration(seconds: 90);
-
-      streamed = await request.send().timeout(timeout);
+      streamed = await request
+          .send()
+          .timeout(const Duration(seconds: 30));
     } on TimeoutException {
+      debugPrint('Drawing analyze timeout for $uri');
       throw Exception(
         kIsWeb
             ? 'සම්බන්ධතාවය කාලය ඉක්මවා ගියේය. Backend http://localhost:8000 මත ක්‍රියාත්මකද බලන්න.'
@@ -231,11 +233,32 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
     final response = await http.Response.fromStream(streamed);
 
+    debugPrint('Drawing analyze status: ${response.statusCode}');
+    debugPrint('Drawing analyze body: ${response.body}');
+
     if (response.statusCode != 200) {
       throw Exception('යැවීම අසාර්ථකයි: ${response.statusCode} ${response.body}');
     }
 
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('අසාර්ථක ප්‍රතිචාර ආකෘතිය: ${response.body}');
+    }
+
+    return decoded;
+  }
+
+  String _resolveBaseUrl(String url) {
+    if (kIsWeb) return url;
+
+    final parsed = Uri.tryParse(url);
+    if (parsed == null) return url;
+
+    if (parsed.host == 'localhost' || parsed.host == '127.0.0.1') {
+      return parsed.replace(host: '10.0.2.2').toString();
+    }
+
+    return url;
   }
 
   Future<void> _submitDrawingBoard() async {
@@ -269,6 +292,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       _showChildSupportDialog(result);
     } catch (e) {
       if (!mounted) return;
+      debugPrint('Drawing analyze error: $e');
       _showError(e.toString());
     } finally {
       if (mounted) {
@@ -335,6 +359,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       _showChildSupportDialog(result);
     } catch (e) {
       if (!mounted) return;
+      debugPrint('Drawing analyze error: $e');
       _showError(e.toString());
     } finally {
       if (mounted) {
@@ -516,7 +541,6 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     final canRedo = _redoStack.isNotEmpty;
 
     return Scaffold(
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text('සිතුවම් පුවරුව'),
         backgroundColor: const Color(0xFF4EAA57),

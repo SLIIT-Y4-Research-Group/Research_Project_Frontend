@@ -12,9 +12,13 @@ class ParentBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color(0xFF43A047);
-    const inactiveColor = Color(0xFF9CA3AF);
-    const bgColor = Colors.white;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const activeColor = Color(0xFF4EAA57);
+    final inactiveColor =
+      isDark ? const Color(0xFF9CA3AF) : const Color(0xFF9CA3AF);
+    final bgColor = isDark ? const Color(0xFF1F2937) : Colors.white;
+    final borderColor =
+      isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE5E7EB);
 
     final items = [
       _NavItem(icon: Icons.home_rounded, label: 'මුල් පිටුව'),
@@ -26,6 +30,7 @@ class ParentBottomNavBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),

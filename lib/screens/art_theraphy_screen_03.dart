@@ -84,7 +84,6 @@ class _ArtTherapyStep3ScreenState extends State<ArtTherapyStep3Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text("කලා චිකිත්සාව - පියවර 03"),
         backgroundColor: const Color(0xFF4EAA57),
