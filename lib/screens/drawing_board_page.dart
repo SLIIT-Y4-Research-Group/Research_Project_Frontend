@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -10,12 +11,14 @@ import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../config/api_config.dart';
-
-import 'dart:io' as io;
+import '../widgets/child_bottom_nav_bar.dart';
+import 'balloon_breath_page.dart';
+import 'bubble_pop_page.dart';
+import 'main_home_screen.dart';
 
 enum BrushType { pen, pencil, marker, eraser }
 
@@ -27,11 +30,6 @@ class Stroke {
 
   final List<Offset> points;
   final Paint paint;
-
-  Stroke copyWith({List<Offset>? points, Paint? paint}) => Stroke(
-        points: points ?? this.points,
-        paint: paint ?? this.paint,
-      );
 }
 
 class DrawingBoardPage extends StatefulWidget {
@@ -39,9 +37,10 @@ class DrawingBoardPage extends StatefulWidget {
     super.key,
     required this.childId,
     String? baseUrl,
-  }) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
+  }) : baseUrl = baseUrl ??
+            (kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000');
 
-  final int childId;
+  final String childId;
   final String baseUrl;
 
   @override
@@ -58,7 +57,6 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
   BrushType _brush = BrushType.pen;
 
   final GlobalKey _repaintKey = GlobalKey();
-  final TextEditingController _noteController = TextEditingController();
 
   bool _isSubmitting = false;
   Map<String, dynamic>? _lastResult;
@@ -120,6 +118,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   void _addPoint(Offset p) {
     if (_current == null) return;
+
     setState(() {
       _current!.points.add(p);
     });
@@ -133,6 +132,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   void _undo() {
     if (_strokes.isEmpty) return;
+
     setState(() {
       _redoStack.add(_strokes.removeLast());
     });
@@ -140,6 +140,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   void _redo() {
     if (_redoStack.isEmpty) return;
+
     setState(() {
       _strokes.add(_redoStack.removeLast());
     });
@@ -150,14 +151,17 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       _strokes.clear();
       _redoStack.clear();
       _current = null;
+      _lastResult = null;
     });
   }
 
   Future<Uint8List> _exportPngBytes() async {
     final boundary =
         _repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
     final img = await boundary.toImage(pixelRatio: 3.0);
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+
     return byteData!.buffer.asUint8List();
   }
 
@@ -166,7 +170,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Exported PNG bytes')),
+        const SnackBar(content: Text('PNG ලෙස සූදානම් කර ඇත')),
       );
       return;
     }
@@ -175,24 +179,30 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     final file = io.File(
       '${dir.path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png',
     );
+
     await file.writeAsBytes(bytes);
 
-    await Share.shareXFiles([XFile(file.path)], text: 'My drawing!');
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'මගේ චිත්‍රය',
+    );
   }
 
   Future<Map<String, dynamic>> _submitBytes({
     required Uint8List bytes,
     required String filename,
     required String contentType,
+    String sourceOverride = '',
   }) async {
     final uri = Uri.parse('${widget.baseUrl}/drawing/analyze');
-    print('Submitting to: $uri');
-    print('Filename: $filename');
-    print('Content-Type: $contentType');
 
     final request = http.MultipartRequest('POST', uri);
-    request.fields['child_id'] = widget.childId.toString();
-    request.fields['note'] = _noteController.text.trim();
+    request.fields['child_id'] = widget.childId;
+    request.fields['note'] = 'child_drawing_submission';
+
+    if (sourceOverride.isNotEmpty) {
+      request.fields['source_override'] = sourceOverride;
+    }
 
     request.files.add(
       http.MultipartFile.fromBytes(
@@ -204,20 +214,25 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     );
 
     http.StreamedResponse streamed;
+
     try {
-      streamed = await request.send().timeout(const Duration(seconds: 30));
+      final timeout = sourceOverride == 'drawing_board'
+          ? const Duration(seconds: 120)
+          : const Duration(seconds: 90);
+
+      streamed = await request.send().timeout(timeout);
     } on TimeoutException {
       throw Exception(
         kIsWeb
-            ? 'Connection timed out. Make sure backend is running on ${widget.baseUrl} and CORS is enabled.'
-            : 'Connection timed out. Check that the backend is running and reachable.',
+            ? 'සම්බන්ධතාවය කාලය ඉක්මවා ගියේය. Backend http://localhost:8000 මත ක්‍රියාත්මකද බලන්න.'
+            : 'සම්බන්ධතාවය කාලය ඉක්මවා ගියේය. Backend සේවාව ක්‍රියාත්මකද බලන්න.',
       );
     }
 
     final response = await http.Response.fromStream(streamed);
 
     if (response.statusCode != 200) {
-      throw Exception('Submit failed: ${response.statusCode} ${response.body}');
+      throw Exception('යැවීම අසාර්ථකයි: ${response.statusCode} ${response.body}');
     }
 
     return jsonDecode(response.body) as Map<String, dynamic>;
@@ -226,8 +241,13 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
   Future<void> _submitDrawingBoard() async {
     if (_strokes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please draw something first.')),
+        const SnackBar(content: Text('කරුණාකර මුලින්ම චිත්‍රයක් අඳින්න.')),
       );
+      return;
+    }
+
+    if (widget.childId.isEmpty) {
+      _showError('දරුවාගේ හැඳුනුම් අංකය නොමැත. නැවත Login වන්න.');
       return;
     }
 
@@ -235,15 +255,18 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       setState(() => _isSubmitting = true);
 
       final bytes = await _exportPngBytes();
+
       final result = await _submitBytes(
         bytes: bytes,
         filename: 'drawing_board.png',
         contentType: 'image/png',
+        sourceOverride: 'drawing_board',
       );
 
       if (!mounted) return;
+
       setState(() => _lastResult = result);
-      _showResultDialog(result);
+      _showChildSupportDialog(result);
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString());
@@ -255,6 +278,11 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
   }
 
   Future<void> _scanOrUploadAndSubmit() async {
+    if (widget.childId.isEmpty) {
+      _showError('දරුවාගේ හැඳුනුම් අංකය නොමැත. නැවත Login වන්න.');
+      return;
+    }
+
     try {
       final source = await showModalBottomSheet<ImageSource>(
         context: context,
@@ -263,12 +291,12 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt),
-                title: const Text('Scan using camera'),
+                title: const Text('කැමරාවෙන් Scan කරන්න'),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from gallery'),
+                title: const Text('Gallery එකෙන් තෝරන්න'),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -291,11 +319,9 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
       final ext = picked.name.toLowerCase();
       String type = 'image/jpeg';
-      if (ext.endsWith('.png')) {
-        type = 'image/png';
-      } else if (ext.endsWith('.webp')) {
-        type = 'image/webp';
-      }
+
+      if (ext.endsWith('.png')) type = 'image/png';
+      if (ext.endsWith('.webp')) type = 'image/webp';
 
       final result = await _submitBytes(
         bytes: bytes,
@@ -304,8 +330,9 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       );
 
       if (!mounted) return;
+
       setState(() => _lastResult = result);
-      _showResultDialog(result);
+      _showChildSupportDialog(result);
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString());
@@ -316,60 +343,171 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     }
   }
 
-  void _showResultDialog(Map<String, dynamic> result) {
-    final emotion = result['emotion'] ?? {};
-    final objects = result['objects'] ?? {};
-    final detections = (objects['detections'] as List?) ?? [];
+  void _showChildSupportDialog(Map<String, dynamic> result) {
+    final emotionRaw =
+        result['emotion']?['label']?.toString().toLowerCase() ?? '';
+    final isSad = emotionRaw == 'sad';
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('Analysis Complete'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+        title: Text(
+          isSad ? 'අද ඔයාගේ හැඟීම්' : 'අද ඔයා සතුටින් වගේ',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Analysis ID: ${result['analysis_id']}'),
-              const SizedBox(height: 8),
-              Text('Emotion: ${emotion['label'] ?? '-'}'),
-              Text(
-                'Confidence: ${((emotion['confidence'] ?? 0.0) as num).toStringAsFixed(3)}',
-              ),
-              const SizedBox(height: 8),
-              Text('Detected objects: ${objects['count'] ?? 0}'),
-              const SizedBox(height: 8),
-              if (detections.isNotEmpty) ...[
-                const Text('Top detections:'),
-                const SizedBox(height: 4),
-                ...detections.take(5).map((d) {
-                  final label = d['label'] ?? '-';
-                  final score = ((d['score'] ?? 0.0) as num).toStringAsFixed(2);
-                  return Text('• $label ($score)');
-                }),
-              ],
-            ],
-          ),
+          child: isSad ? _sadChildSupportContent() : _happyChildSupportContent(),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+
+                if (!isSad) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MainHomeScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4EAA57),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('හරි'),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+  Widget _sadChildSupportContent() {
+    final tips = [
+      'විශ්වාසය තියෙන කෙනෙකුට, අම්මා, තාත්තා, ගුරුතුමිය, ගුරුතුමා හෝ යාලුවෙක්ට ඔබේ හැඟීම් කියන්න.',
+      'දුක්වෙන්න එක සාමාන්‍ය දෙයක් කියලා මතක තියාගන්න.',
+      'හුස්ම ගැඹුරු ලෙස ගන්න සහ ශරීරය සැහැල්ලු කරන්න.',
+      'ඔබ කැමති දෙයක් කරන්න, චිත්‍ර ඇඳීම, ක්‍රීඩා, සංගීතය ඇසීම හෝ පොත් කියවීම වගේ.',
+      'ටිකක් පිටතට ගිහින් තෙත් වායුව ගන්න.',
+      'ඔබේ හැඟීම් ලියන්න හෝ ඇඳන්න.',
+      'කැමති ගීත අහන්න හෝ සතුටු කරන දෙයක් බලන්න.',
+      'යාලුවන් හෝ පවුලේ අය සමඟ කාලය ගත කරන්න.',
+      'හොඳට නිදාගන්න සහ සුවදායී ආහාර ගන්න.',
+      'අන් අය සමඟ ඔබව සසඳන්න එපා.',
+      'අද දවසේ හොඳ දෙයක් එකක් හරි මතක් කරන්න.',
+      'ලොකු ප්‍රශ්න කුඩා පියවර වලට බෙදා ගන්න.',
+      'පාඩම් වලට ආතතියක් තියෙනවා නම් උදව් ඉල්ලන්න.',
+      'ඔබට ඔබම කරුණාවෙන් හැසිරෙන්න, ඔබට ඔබම දොස් නොදෙන්න.',
+      'දිගටම දුක්වෙලා ඉන්නවා නම් ගුරුතුමිය, ගුරුතුමා හෝ උපදේශකවරයෙකු සමඟ කතා කරන්න.',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'අද ඔයාගේ හැඟීම් ටිකක් දුකින් වගේ. ඒක හරි. අපි ටිකක් සන්සුන් වෙමු.',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BubblePopPage()),
+              );
+            },
+            child: const Text('Bubble Pop ක්‍රීඩාවට යන්න'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BalloonBreathPage()),
+              );
+            },
+            child: const Text('හුස්ම ගැනීමේ ක්‍රියාකාරකමට යන්න'),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...tips.map(
+          (tip) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text('- $tip'),
+          ),
+        ),
+      ],
     );
   }
 
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
+  Widget _happyChildSupportContent() {
+    final messages = [
+      'අද ඔයා සතුටින් වගේ 😊',
+      'ඒක හරි ලස්සන දෙයක්.',
+      'ඔයාට සතුටක් දෙන දේවල් කරගෙන යන්න.',
+      'ඔයාගේ හැඟීම් හොඳින් ප්‍රකාශ කළා.',
+      'ඔයා ශක්තිමත් ළමයෙක් ❤️',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          height: 130,
+          child: Lottie.asset(
+            'assets/lottie/man.json',
+            fit: BoxFit.contain,
+            repeat: true,
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'අද ඔයා සතුටින් වගේ 😊',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E7D32),
+          ),
+        ),
+        const SizedBox(height: 14),
+        ...messages.map(
+          (msg) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '- $msg',
+                style: const TextStyle(fontSize: 14.5, height: 1.4),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -378,11 +516,14 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     final canRedo = _redoStack.isNotEmpty;
 
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
-        title: const Text('Kids Drawing Board'),
+        title: const Text('සිතුවම් පුවරුව'),
+        backgroundColor: const Color(0xFF4EAA57),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            tooltip: 'Export / Share',
+            tooltip: 'බෙදාගන්න',
             onPressed: _saveOrShare,
             icon: const Icon(Icons.ios_share),
           ),
@@ -408,18 +549,9 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
           Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _noteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Note (optional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -433,21 +565,24 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                         _ToolChip(
                           label: 'Pencil',
                           selected: _brush == BrushType.pencil,
-                          onTap: () => setState(() => _brush = BrushType.pencil),
+                          onTap: () =>
+                              setState(() => _brush = BrushType.pencil),
                         ),
                         _ToolChip(
                           label: 'Marker',
                           selected: _brush == BrushType.marker,
-                          onTap: () => setState(() => _brush = BrushType.marker),
+                          onTap: () =>
+                              setState(() => _brush = BrushType.marker),
                         ),
                         _ToolChip(
                           label: 'Eraser',
                           selected: _brush == BrushType.eraser,
-                          onTap: () => setState(() => _brush = BrushType.eraser),
+                          onTap: () =>
+                              setState(() => _brush = BrushType.eraser),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         const Icon(Icons.brush),
@@ -470,16 +605,16 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     SizedBox(
-                      height: 44,
+                      height: 42,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemBuilder: (context, i) {
                           final c = _palette[i];
-                          final selected =
-                              c.value == _color.value &&
+                          final selected = c.value == _color.value &&
                               _brush != BrushType.eraser;
+
                           return GestureDetector(
                             onTap: () => setState(() {
                               _color = c;
@@ -488,19 +623,24 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                               }
                             }),
                             child: Container(
-                              width: 36,
-                              height: 36,
+                              width: 34,
+                              height: 34,
                               decoration: BoxDecoration(
                                 color: c,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   width: selected ? 3 : 1,
-                                  color: selected ? Colors.black : Colors.grey.shade400,
+                                  color: selected
+                                      ? Colors.black
+                                      : Colors.grey.shade400,
                                 ),
                               ),
                               child: c == Colors.white
                                   ? const Center(
-                                      child: Icon(Icons.circle_outlined, size: 16),
+                                      child: Icon(
+                                        Icons.circle_outlined,
+                                        size: 16,
+                                      ),
                                     )
                                   : null,
                             ),
@@ -513,11 +653,10 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 6),
               Expanded(
                 child: Container(
                   color: Colors.grey.shade200,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   child: RepaintBoundary(
                     key: _repaintKey,
                     child: ClipRRect(
@@ -540,7 +679,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                 child: Column(
                   children: [
                     SizedBox(
@@ -548,25 +687,23 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                       child: ElevatedButton.icon(
                         onPressed: _isSubmitting ? null : _submitDrawingBoard,
                         icon: const Icon(Icons.send),
-                        label: const Text('Submit Drawing'),
+                        label: const Text('චිත්‍රය යවන්න'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4EAA57),
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: _isSubmitting ? null : _scanOrUploadAndSubmit,
+                        onPressed:
+                            _isSubmitting ? null : _scanOrUploadAndSubmit,
                         icon: const Icon(Icons.document_scanner_outlined),
-                        label: const Text('Scan / Upload & Submit'),
+                        label: const Text('Scan / Upload කර යවන්න'),
                       ),
                     ),
-                    if (_lastResult != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Last result: ${_lastResult!['emotion']?['label'] ?? '-'}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -576,7 +713,9 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
             Container(
               color: Colors.black26,
               child: const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: Color(0xFF4EAA57),
+                ),
               ),
             ),
         ],
@@ -635,9 +774,7 @@ class _StrokesPainter extends CustomPainter {
       }
 
       for (int i = 0; i < s.points.length - 1; i++) {
-        final p1 = s.points[i];
-        final p2 = s.points[i + 1];
-        canvas.drawLine(p1, p2, s.paint);
+        canvas.drawLine(s.points[i], s.points[i + 1], s.paint);
       }
     }
   }

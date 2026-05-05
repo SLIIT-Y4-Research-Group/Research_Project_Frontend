@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'auth_service.dart';
@@ -22,6 +21,8 @@ class ApiClient {
     return headers;
   }
 
+  // ================= AUTH =================
+
   static Future<http.Response> registerParent(String email, String password) async {
     return await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/parent/register'),
@@ -34,56 +35,28 @@ class ApiClient {
   }
 
   static Future<http.Response> loginParent(String email, String password) async {
-    final url = '${ApiConfig.baseUrl}/auth/parent/login';
-    final requestBody = jsonEncode({
-      'email': email,
-      'password': password,
-    });
-    final headers = await _getHeaders();
-
-    debugPrint('[AUTH][PARENT LOGIN] URL: $url');
-    debugPrint('[AUTH][PARENT LOGIN] Body: $requestBody');
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: requestBody,
-      );
-      debugPrint('[AUTH][PARENT LOGIN] Status: ${response.statusCode}');
-      debugPrint('[AUTH][PARENT LOGIN] Response: ${response.body}');
-      return response;
-    } catch (e) {
-      debugPrint('[AUTH][PARENT LOGIN] Exception: $e');
-      rethrow;
-    }
+    return await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/parent/login'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
   }
 
   static Future<http.Response> loginChild(String username, String password) async {
-    final url = '${ApiConfig.baseUrl}/auth/child/login';
-    final requestBody = jsonEncode({
-      'username': username,
-      'password': password,
-    });
-    final headers = await _getHeaders();
-
-    debugPrint('[AUTH][CHILD LOGIN] URL: $url');
-    debugPrint('[AUTH][CHILD LOGIN] Body: $requestBody');
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: headers,
-        body: requestBody,
-      );
-      debugPrint('[AUTH][CHILD LOGIN] Status: ${response.statusCode}');
-      debugPrint('[AUTH][CHILD LOGIN] Response: ${response.body}');
-      return response;
-    } catch (e) {
-      debugPrint('[AUTH][CHILD LOGIN] Exception: $e');
-      rethrow;
-    }
+    return await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/child/login'),
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+      }),
+    );
   }
+
+  // ================= CHILD MANAGEMENT =================
 
   static Future<http.Response> getChildren() async {
     return await http.get(
@@ -109,6 +82,8 @@ class ApiClient {
       }),
     );
   }
+
+  // ================= TRUSTED CONTACTS =================
 
   static Future<http.Response> inviteTrustedContact(
     String childId,
@@ -143,7 +118,17 @@ class ApiClient {
     );
   }
 
-  // Store Mood (Child)
+  static Future<http.Response> getTrustedContacts(String childId) async {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    return await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/parent/children/$childId/trusted?_t=$timestamp'),
+      headers: await _getHeaders(includeAuth: true),
+    );
+  }
+
+  // ================= MOOD =================
+
   static Future<http.Response> storeMood({
     required String mood,
     required String datetime,
@@ -156,26 +141,32 @@ class ApiClient {
         "datetime": datetime,
       }),
     );
+
     print('[API] storeMood - Status: ${response.statusCode}, Body: ${response.body}');
     return response;
   }
 
-  // Get Parent Drawings
-  static Future<http.Response> getParentDrawings() async {
-    return await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/parent/drawings'),
+  static Future<http.Response> getTodayMoodStatus() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/child/me/today-mood-status'),
       headers: await _getHeaders(includeAuth: true),
     );
+
+    print('[API] getTodayMoodStatus - Status: ${response.statusCode}, Body: ${response.body}');
+    return response;
   }
 
-  static Future<http.Response> getTrustedContacts(String childId) async {
-    // Add timestamp to prevent caching
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    return await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/parent/children/$childId/trusted?_t=$timestamp'),
+  static Future<http.Response> getWeeklyMoods() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/child/me/weekly-moods'),
       headers: await _getHeaders(includeAuth: true),
     );
+
+    print('[API] getWeeklyMoods - Status: ${response.statusCode}, Body: ${response.body}');
+    return response;
   }
+
+  // ================= CHILD SETTINGS =================
 
   static Future<http.Response> updateChildConsent(bool alertsConsent) async {
     return await http.patch(
@@ -187,14 +178,6 @@ class ApiClient {
     );
   }
 
-  static Future<http.Response> getChildInfo() async {
-    return await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/child/me'),
-      headers: await _getHeaders(includeAuth: true),
-    );
-  }
-
-  // Respond to Alert Permission Request (Child)
   static Future<http.Response> respondAlertPermission({
     required bool approve,
   }) async {
@@ -207,27 +190,13 @@ class ApiClient {
     );
   }
 
-  // Get Today's Mood Status (Child)
-  static Future<http.Response> getTodayMoodStatus() async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/child/me/today-mood-status'),
+  static Future<http.Response> getChildInfo() async {
+    return await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/child/me'),
       headers: await _getHeaders(includeAuth: true),
     );
-    print('[API] getTodayMoodStatus - Status: ${response.statusCode}, Body: ${response.body}');
-    return response;
   }
 
-  // Get Weekly Moods (Child)
-  static Future<http.Response> getWeeklyMoods() async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/child/me/weekly-moods'),
-      headers: await _getHeaders(includeAuth: true),
-    );
-    print('[API] getWeeklyMoods - Status: ${response.statusCode}, Body: ${response.body}');
-    return response;
-  }
-
-  // Mark First Login Prompt as Seen (Child)
   static Future<http.Response> markFirstLoginPromptSeen() async {
     return await http.post(
       Uri.parse('${ApiConfig.baseUrl}/child/me/first-login-seen'),
@@ -236,18 +205,81 @@ class ApiClient {
     );
   }
 
-  // Reset Child Password (Child)
   static Future<http.Response> resetChildPassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    return await http.patch(  // Changed from POST to PATCH
+    return await http.patch(
       Uri.parse('${ApiConfig.baseUrl}/child/me/reset-password'),
       headers: await _getHeaders(includeAuth: true),
       body: jsonEncode({
         'current_password': currentPassword,
         'new_password': newPassword,
       }),
+    );
+  }
+
+  // ================= DRAWINGS =================
+
+  static Future<http.Response> getParentDrawings() async {
+    return await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/parent/drawings'),
+      headers: await _getHeaders(includeAuth: true),
+    );
+  }
+
+  static Future<http.Response> getParentDrawingReports() async {
+    return await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/drawing/parent/me'),
+      headers: await _getHeaders(includeAuth: true),
+    );
+  }
+
+  static Future<http.Response> getChildDrawingsGallery() async {
+    return await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/drawing/child/me/gallery'),
+      headers: await _getHeaders(includeAuth: true),
+    );
+  }
+
+  static String getDrawingImageUrl(String analysisId) {
+    return '${ApiConfig.baseUrl}/drawing/image/$analysisId';
+  }
+
+  // ================= THERAPY =================
+
+  static Future<http.Response> logTherapySession({
+    required String activityType,
+    required int durationSeconds,
+    int? score,
+    int? roundsCompleted,
+    String? triggeredByEmotion,
+  }) async {
+    final body = <String, dynamic>{
+      'activity_type': activityType,
+      'duration_seconds': durationSeconds,
+    };
+
+    if (score != null) body['score'] = score;
+    if (roundsCompleted != null) body['rounds_completed'] = roundsCompleted;
+    if (triggeredByEmotion != null) {
+      body['triggered_by_emotion'] = triggeredByEmotion;
+    }
+
+    return await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/therapy/session'),
+      headers: await _getHeaders(includeAuth: true),
+      body: jsonEncode(body),
+    );
+  }
+
+  static Future<http.Response> getChildReport({
+    required String childId,
+    int days = 30,
+  }) async {
+    return await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/therapy/report/$childId?days=$days'),
+      headers: await _getHeaders(includeAuth: true),
     );
   }
 }

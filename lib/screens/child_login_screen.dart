@@ -54,22 +54,24 @@ class _ChildLoginScreenState extends State<ChildLoginScreen> {
 
         final prefs = await SharedPreferences.getInstance();
 
-        final String childId =
-            (data['child_id'] ??
-                    data['id'] ??
-                    data['student_id'] ??
-                    _usernameController.text.trim())
-                .toString();
+        final String childId = (
+  data['child']?['id'] ??
+  data['child_id'] ??
+  data['id'] ??
+  data['student_id'] ??
+  ''
+).toString();
 
-        final String childName =
-            (data['child_name'] ??
-                    data['name'] ??
-                    data['student_name'] ??
-                    _usernameController.text.trim())
-                .toString();
+final String childName = (
+  data['child']?['name'] ??
+  data['child_name'] ??
+  data['name'] ??
+  data['student_name'] ??
+  _usernameController.text.trim()
+).toString();
 
-        await prefs.setString('child_id', childId);
-        await prefs.setString('child_name', childName);
+await prefs.setString('child_id', childId);
+await prefs.setString('child_name', childName);
 
         if (mounted) {
           Navigator.pushReplacement(
