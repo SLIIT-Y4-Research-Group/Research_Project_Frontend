@@ -528,8 +528,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    const Color(0xFF22C55E).withOpacity(0.3),
+                                color: const Color(0xFF22C55E).withOpacity(0.3),
                                 blurRadius: 16,
                                 offset: const Offset(0, 8),
                               ),
@@ -581,7 +580,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 32),
-                        _SectionTitle(title: 'ඉක්මන් ක්‍රියාකාරකම්'),
+                        const _SectionTitle(title: 'ඉක්මන් ක්‍රියාකාරකම්'),
                         const SizedBox(height: 16),
                         LayoutBuilder(
                           builder: (context, constraints) {
@@ -665,7 +664,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                           },
                         ),
                         const SizedBox(height: 36),
-                        _SectionTitle(title: 'ප්‍රධාන විශේෂාංග'),
+                        const _SectionTitle(title: 'ප්‍රධාන විශේෂාංග'),
                         const SizedBox(height: 16),
                         _MainFunctionCard(
                           title: 'කතා මිතුරා',
