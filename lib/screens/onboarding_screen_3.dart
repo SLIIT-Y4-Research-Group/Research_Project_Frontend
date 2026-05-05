@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart';
+import 'package:my_first_app/screens/welcome_screen.dart';
 
 class OnboardingScreen3 extends StatelessWidget {
   const OnboardingScreen3({super.key});
@@ -11,26 +11,20 @@ class OnboardingScreen3 extends StatelessWidget {
       body: Stack(
         children: [
           Positioned(
-            top: -80,
-            right: -40,
-            child: Container(
-              width: 170,
-              height: 170,
-              decoration: const BoxDecoration(
-                color: Color(0xFF71D483),
-                shape: BoxShape.circle,
-              ),
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Image.asset(
+              'assets/images/onboardBG.png',
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.bottomCenter,
             ),
           ),
-          Positioned(
-            bottom: -70,
-            left: -90,
-            child: Container(
-              width: 210,
-              height: 210,
-              decoration: const BoxDecoration(
-                color: Color(0xFF71D483),
-                shape: BoxShape.circle,
+
+          SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height,
               ),
             ),
           ),
@@ -44,7 +38,7 @@ class OnboardingScreen3 extends StatelessWidget {
                       width: 200,
                       height: 200,
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/anim_logo.gif',
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -62,9 +56,8 @@ class OnboardingScreen3 extends StatelessWidget {
                               minHeight: constraints.maxHeight,
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32.0,
-                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 32.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
@@ -101,17 +94,15 @@ class OnboardingScreen3 extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 24),
                                   Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 16.0,
-                                    ),
+                                    padding:
+                                        const EdgeInsets.only(bottom: 16.0),
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 16.0,
-                                          ),
+                                          padding:
+                                              const EdgeInsets.only(left: 16.0),
                                           child: _buildNavButton(
                                             icon: Icons.arrow_back,
                                             onPressed: () {
@@ -120,9 +111,8 @@ class OnboardingScreen3 extends StatelessWidget {
                                           ),
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 16.0,
-                                          ),
+                                          padding:
+                                              const EdgeInsets.only(right: 16.0),
                                           child: _buildNavButton(
                                             icon: Icons.arrow_forward,
                                             onPressed: () {
@@ -162,9 +152,7 @@ class OnboardingScreen3 extends StatelessWidget {
       width: 12,
       height: 12,
       decoration: BoxDecoration(
-        color: isActive
-            ? Colors.white
-            : Colors.white.withValues(alpha: 0.5),
+        color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
         shape: BoxShape.circle,
       ),
     );
@@ -182,7 +170,7 @@ class OnboardingScreen3 extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

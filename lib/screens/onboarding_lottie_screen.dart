@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import '../widgets/child_bottom_nav_bar.dart';
+
 class OnboardingLottieScreen extends StatefulWidget {
   const OnboardingLottieScreen({super.key});
 
@@ -26,7 +28,9 @@ class _OnboardingLottieScreenState extends State<OnboardingLottieScreen> {
 
   Future<void> _goNext() async {
     await _audioPlayer.stop();
+
     if (!mounted) return;
+
     Navigator.pushNamed(context, '/art_theraphy_screen_01');
   }
 
@@ -39,6 +43,7 @@ class _OnboardingLottieScreenState extends State<OnboardingLottieScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       body: Stack(
         children: [
           Positioned.fill(

@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'start_screen.dart';
+import 'main_home_screen.dart';
 
 class MoodResultScreen extends StatelessWidget {
   final String mood;
+  final int? totalScore;
+  final List<int> perQuestionScores;
 
-  const MoodResultScreen({super.key, required this.mood});
+  const MoodResultScreen({
+    super.key,
+    required this.mood,
+    this.totalScore,
+    this.perQuestionScores = const [],
+  });
+
+  Color _scoreColor(int score) {
+    if (score > 0) {
+      return const Color(0xFF22C55E);
+    }
+    if (score == 0) {
+      return const Color(0xFFF59E0B);
+    }
+    return const Color(0xFFEF4444);
+  }
+
+  String _formatSignedScore(int score) {
+    return score > 0 ? "+$score" : score.toString();
+  }
 
   Map<String, dynamic> _getMoodContent() {
     final moodLower = mood.toLowerCase();
@@ -14,7 +35,7 @@ class MoodResultScreen extends StatelessWidget {
       return {
         'animation': 'assets/lottie/happyandnormal.json',
         'title': 'Happy',
-        'message': 'ඔයා අද හරිම සතුටුයි කියලා මට පේනවා\n\n'
+        'message': 'ඔයා අද හරිම සතුටෙන් කියලා මට පේනවා\n\n'
             'එහෙම දවසක් තියෙන එක හරිම ලස්සන දෙයක්.\n'
             'ඔයා හොඳට උත්සාහ කරලා තියෙනවා, ඒ නිසාම මේ සතුට ලැබිලා තියෙන්න ඇති.\n\n'
             'හෙටත් මේ වගේ හොඳ හිතක්, හොඳ සිතුවිලි, හොඳ ක්‍රියාවල් කරගෙන යන්න පුළුවන් කියලා මම විශ්වාස කරනවා',
@@ -57,6 +78,13 @@ class MoodResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = _getMoodContent();
     final size = MediaQuery.of(context).size;
+    final int? safeTotalScore = totalScore;
+    final Color scoreColor = safeTotalScore == null
+        ? const Color(0xFF6B7280)
+        : _scoreColor(safeTotalScore);
+    final double? scoreProgress = safeTotalScore == null
+        ? null
+        : ((safeTotalScore + 5) / 10).clamp(0.0, 1.0);
     
     return Scaffold(
       body: Container(
@@ -250,7 +278,7 @@ class MoodResultScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              content['title'],
+                              mood.isNotEmpty ? mood : content['title'],
                               style: TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w900,
@@ -261,7 +289,19 @@ class MoodResultScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      
+
+                      const SizedBox(height: 16),
+
+                      if (mood.isNotEmpty)
+                        Text(
+                          "Final mood: $mood",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+
                       const SizedBox(height: 35),
                       
                       // Enhanced Message Card
@@ -337,8 +377,10 @@ class MoodResultScreen extends StatelessWidget {
                   ),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const StartScreen()),
+                      // Navigate to home screen and clear navigation stack
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MainHomeScreen()),
                         (route) => false,
                       );
                     },

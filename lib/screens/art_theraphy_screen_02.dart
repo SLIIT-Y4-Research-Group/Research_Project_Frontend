@@ -1,7 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
+
+import '../widgets/child_bottom_nav_bar.dart';
 
 class ArtTherapyStep2Screen extends StatefulWidget {
   const ArtTherapyStep2Screen({super.key});
@@ -45,6 +48,7 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
 
   Future<void> _goNext() async {
     if (_navigated || !mounted) return;
+
     _navigated = true;
     _timer?.cancel();
 
@@ -71,6 +75,7 @@ class _ArtTherapyStep2ScreenState extends State<ArtTherapyStep2Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text("කලා චිකිත්සාව - පියවර 02"),
         backgroundColor: const Color(0xFF4EAA57),

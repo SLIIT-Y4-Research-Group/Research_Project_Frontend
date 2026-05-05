@@ -118,7 +118,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   Future<Map<String, dynamic>?> _fetchTrackDetails(String trackId) async {
-    final uri = Uri.parse('${ApiConfig.BASE_URL}/music/tracks/$trackId');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/music/tracks/$trackId');
     final response = await http.get(uri);
     if (response.statusCode != 200) {
       return null;

@@ -1,16 +1,23 @@
 import 'dart:async';
-import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
+import '../services/api_client.dart';
 import '../services/leaderboard_service.dart';
+import '../widgets/child_bottom_nav_bar.dart';
 
 class BubblePopPage extends StatefulWidget {
-  const BubblePopPage({super.key});
+  const BubblePopPage({
+    super.key,
+    this.triggeredByEmotion,
+  });
+
+  final String? triggeredByEmotion;
 
   @override
   State<BubblePopPage> createState() => _BubblePopPageState();
 }
-
 
 class _BubblePopPageState extends State<BubblePopPage> {
   final Random _random = Random();
@@ -25,6 +32,8 @@ class _BubblePopPageState extends State<BubblePopPage> {
   Timer? spawnTimer;
   Timer? moveTimer;
   Timer? gameTimer;
+
+  DateTime? _gameStartTime;
 
   Size screenSize = Size.zero;
 
@@ -46,13 +55,13 @@ class _BubblePopPageState extends State<BubblePopPage> {
   Future<void> startGame() async {
     if (gameRunning || _isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     await Future.delayed(const Duration(milliseconds: 800));
 
     if (!mounted) return;
+
+    _gameStartTime = DateTime.now();
 
     setState(() {
       score = 0;
@@ -80,9 +89,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
     gameTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!gameRunning) return;
 
-      setState(() {
-        timeLeft--;
-      });
+      setState(() => timeLeft--);
 
       if (timeLeft <= 0) {
         stopGame();
@@ -95,9 +102,25 @@ class _BubblePopPageState extends State<BubblePopPage> {
     moveTimer?.cancel();
     gameTimer?.cancel();
 
-    setState(() {
-      gameRunning = false;
-    });
+    setState(() => gameRunning = false);
+
+    _logSession();
+  }
+
+  Future<void> _logSession() async {
+    if (_gameStartTime == null) return;
+
+    final duration =
+        DateTime.now().difference(_gameStartTime!).inSeconds.clamp(1, 300);
+
+    try {
+      await ApiClient.logTherapySession(
+        activityType: 'bubble_pop',
+        durationSeconds: duration,
+        score: score,
+        triggeredByEmotion: widget.triggeredByEmotion,
+      );
+    } catch (_) {}
   }
 
   void spawnBubble() {
@@ -107,7 +130,8 @@ class _BubblePopPageState extends State<BubblePopPage> {
     final x = _random.nextDouble() * (screenSize.width - size);
     final y = screenSize.height + 8;
     final vy = 1.2 + _random.nextDouble() * 2.2;
-    final vx = (_random.nextDouble() * 2 - 1) * (0.3 + _random.nextDouble() * 0.9);
+    final vx =
+        (_random.nextDouble() * 2 - 1) * (0.3 + _random.nextDouble() * 0.9);
     final baseColor = _bubbleColors[_random.nextInt(_bubbleColors.length)];
 
     setState(() {
@@ -157,8 +181,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
   }
 
   void popBubble(_Bubble bubble) {
-    if (!gameRunning) return;
-    if (bubble.popped) return;
+    if (!gameRunning || bubble.popped) return;
 
     setState(() {
       bubble.popped = true;
@@ -180,15 +203,21 @@ class _BubblePopPageState extends State<BubblePopPage> {
     screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 2),
       appBar: AppBar(
-        title: const Text("බුබුළු පුපුරවන්න"),
+        title: const Text('බුබුළු පුපුරවන්න'),
+        backgroundColor: const Color(0xFF4EAA57),
+        foregroundColor: Colors.white,
       ),
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFE3F2FD), Colors.white],
+                colors: [
+                  Color(0xFFE3F2FD),
+                  Colors.white,
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -196,8 +225,10 @@ class _BubblePopPageState extends State<BubblePopPage> {
           ),
 
           ...bubbles.map((bubble) {
-            final double scale = bubble.popped ? (1.0 + 0.9 * bubble.popProgress) : 1.0;
-            final double opacity = bubble.popped ? (1.0 - bubble.popProgress) : 1.0;
+            final double scale =
+                bubble.popped ? (1.0 + 0.9 * bubble.popProgress) : 1.0;
+            final double opacity =
+                bubble.popped ? (1.0 - bubble.popProgress) : 1.0;
 
             return Positioned(
               left: bubble.x,
@@ -223,7 +254,7 @@ class _BubblePopPageState extends State<BubblePopPage> {
                             color: bubble.borderColor.withValues(alpha: 0.45),
                             blurRadius: 14,
                             spreadRadius: 2,
-                          )
+                          ),
                         ],
                       ),
                       child: Align(
@@ -247,23 +278,30 @@ class _BubblePopPageState extends State<BubblePopPage> {
           Positioned(
             top: 20,
             left: 20,
-            child: _InfoBox("ලකුණු : $score"),
+            child: _InfoBox('ලකුණු : $score'),
           ),
           Positioned(
             top: 20,
             right: 20,
-            child: _InfoBox("වේලාව : $timeLeft"),
+            child: _InfoBox('වේලාව : $timeLeft'),
           ),
 
           if (!gameRunning && timeLeft > 0 && !_isLoading)
             Center(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(76, 175, 80, 1),
+                  backgroundColor: const Color(0xFF4EAA57),
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 onPressed: startGame,
-                child: const Text("ක්‍රීඩාව ආරම්භ කරන්න"),
+                child: const Text('ක්‍රීඩාව ආරම්භ කරන්න'),
               ),
             ),
 
@@ -271,43 +309,50 @@ class _BubblePopPageState extends State<BubblePopPage> {
             Center(
               child: Card(
                 elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        "වේලාව අවසන්!",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        'වේලාව අවසන්!',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 10),
-                      Text("ඔබගේ ලකුණු: $score"),
+                      Text('ඔබගේ ලකුණු: $score'),
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed:
-                              _isSubmitting ? null : () => _submitScore(context),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => _submitLeaderboardScore(context),
                           child: _isSubmitting
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
-                              : const Text("Submit Score"),
+                              : const Text('ලකුණු ඉදිරිපත් කරන්න'),
                         ),
                       ),
                       const SizedBox(height: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(76, 175, 80, 1),
+                          backgroundColor: const Color(0xFF4EAA57),
                           foregroundColor: Colors.white,
                         ),
-                        onPressed: () async {
-                          await startGame();
-                        },
-                        child: const Text("නැවත ක්‍රීඩා කරන්න"),
-                      )
+                        onPressed: () async => startGame(),
+                        child: const Text('නැවත ක්‍රීඩා කරන්න'),
+                      ),
                     ],
                   ),
                 ),
@@ -317,10 +362,10 @@ class _BubblePopPageState extends State<BubblePopPage> {
           if (_isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 child: const Center(
                   child: CircularProgressIndicator(
-                    color: Color.fromRGBO(76, 175, 80, 1),
+                    color: Color(0xFF4EAA57),
                   ),
                 ),
               ),
@@ -330,73 +375,64 @@ class _BubblePopPageState extends State<BubblePopPage> {
     );
   }
 
-  Future<void> _submitScore(BuildContext context) async {
+  Future<void> _submitLeaderboardScore(BuildContext context) async {
     if (_isSubmitting) return;
 
     final nameController = TextEditingController();
-    final levelController = TextEditingController(text: "1");
+    final levelController = TextEditingController(text: '1');
     final formKey = GlobalKey<FormState>();
 
     try {
       final result = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: const Text("Submit Score"),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: "Player Name"),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Enter player name";
-                      }
-                      return null;
-                    },
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ලකුණු ඉදිරිපත් කරන්න'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'ක්‍රීඩකයාගේ නම',
                   ),
-                  TextFormField(
-                    controller: levelController,
-                    decoration: const InputDecoration(labelText: "Level"),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      final parsed = int.tryParse(value ?? "");
-                      if (parsed == null) {
-                        return "Enter a valid level";
-                      }
-                      return null;
-                    },
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'නම ඇතුළත් කරන්න'
+                      : null,
+                ),
+                TextFormField(
+                  controller: levelController,
+                  decoration: const InputDecoration(
+                    labelText: 'මට්ටම',
                   ),
-                ],
-              ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => (int.tryParse(v ?? '') == null)
+                      ? 'වලංගු මට්ටමක් ඇතුළත් කරන්න'
+                      : null,
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (!(formKey.currentState?.validate() ?? false)) {
-                    return;
-                  }
-                  Navigator.pop(dialogContext, true);
-                },
-                child: const Text("Submit"),
-              ),
-            ],
-          );
-        },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('අවලංගු කරන්න'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!(formKey.currentState?.validate() ?? false)) return;
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('ඉදිරිපත් කරන්න'),
+            ),
+          ],
+        ),
       );
 
       if (result != true) return;
 
-      setState(() {
-        _isSubmitting = true;
-      });
+      setState(() => _isSubmitting = true);
 
       final timePlayed = (30 - timeLeft).clamp(0, 30).toDouble();
 
@@ -408,25 +444,22 @@ class _BubblePopPageState extends State<BubblePopPage> {
       );
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Score submitted.")),
+        const SnackBar(content: Text('ලකුණු ඉදිරිපත් කරන ලදී.')),
       );
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Submit failed: $e")),
+        SnackBar(content: Text('ඉදිරිපත් කිරීම අසාර්ථකයි: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+      if (mounted) setState(() => _isSubmitting = false);
       nameController.dispose();
       levelController.dispose();
     }
   }
-
 }
 
 class _Bubble {
@@ -464,7 +497,7 @@ class _InfoBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color.fromRGBO(76, 175, 80, 1),
+        color: const Color(0xFF4EAA57),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.black.withValues(alpha: 0.05),
@@ -480,12 +513,3 @@ class _InfoBox extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-

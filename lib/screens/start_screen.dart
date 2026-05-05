@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding_screen_1.dart';
+import 'welcome_screen.dart';
 
 class StartScreen extends StatelessWidget {
   const StartScreen({super.key});
@@ -44,7 +45,7 @@ class StartScreen extends StatelessWidget {
                     width: 350,
                     height: 350,
                     child: Image.asset(
-                      'assets/images/anim_logo.gif',
+                      'assets/images/logo.png',
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -91,7 +92,7 @@ class StartScreen extends StatelessWidget {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen1(),
+                          builder: (context) => const WelcomeScreen(),
                         ),
                         (route) => false,
                       );
