@@ -47,39 +47,68 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
       if (fallback.statusCode != 200) {
         throw Exception('Failed to load tracks');
       }
-      final List<dynamic> data = jsonDecode(fallback.body) as List<dynamic>;
-      return data.map((item) {
-        final map = item as Map<String, dynamic>;
-        return {
-          'id': map['id'] ?? map['_id'],
-          'title': map['title'] ?? 'Unknown Title',
-          'subtitle': map['artist'] ?? 'Unknown Artist',
-          'audio_url': map['audio_url'] ?? map['music_url'],
-          'cover_url': map['cover_url'],
-          'duration': '3:00',
-          'colors': _colorsForEmotion(emotion),
-          'isFavorite': false,
-        };
-      }).toList();
+      final decoded = jsonDecode(fallback.body);
+      late final List<dynamic> data;
+      if (decoded is List) {
+        data = decoded;
+      } else if (decoded is Map<String, dynamic> && decoded['tracks'] is List) {
+        data = decoded['tracks'] as List;
+      } else {
+        throw Exception('Unexpected tracks response format');
+      }
+
+      final tracks = data
+          .map((item) => MusicTrack.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      return tracks
+          .map(
+            (track) => {
+              'id': track.id,
+              'title': track.title,
+              'subtitle': track.artist,
+              'audio_url': track.musicUrl,
+              'cover_url': track.coverUrl,
+              'duration': '3:00',
+              'colors': _colorsForEmotion(emotion),
+              'isFavorite': false,
+            },
+          )
+          .toList();
     }
     if (response.statusCode != 200) {
       throw Exception('Failed to load tracks');
     }
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final List<dynamic> data = json['tracks'] as List<dynamic>;
-    return data.map((item) {
-      final map = item as Map<String, dynamic>;
-      return {
-        'id': map['id'] ?? map['_id'],
-        'title': map['title'] ?? 'Unknown Title',
-        'subtitle': map['artist'] ?? 'Unknown Artist',
-        'audio_url': map['audio_url'] ?? map['music_url'],
-        'cover_url': map['cover_url'],
-        'duration': '3:00',
-        'colors': _colorsForEmotion(emotion),
-        'isFavorite': false,
-      };
-    }).toList();
+
+    final decoded = jsonDecode(response.body);
+    late final List<dynamic> data;
+
+    if (decoded is List) {
+      data = decoded;
+    } else if (decoded is Map<String, dynamic> && decoded['tracks'] is List) {
+      data = decoded['tracks'] as List;
+    } else {
+      throw Exception('Unexpected tracks response format');
+    }
+
+    final tracks = data
+        .map((item) => MusicTrack.fromJson(item as Map<String, dynamic>))
+        .toList();
+
+    return tracks
+        .map(
+          (track) => {
+            'id': track.id,
+            'title': track.title,
+            'subtitle': track.artist,
+            'audio_url': track.musicUrl,
+            'cover_url': track.coverUrl,
+            'duration': '3:00',
+            'colors': _colorsForEmotion(emotion),
+            'isFavorite': false,
+          },
+        )
+        .toList();
   }
 
   // Emotion label mapping for Sinhala
@@ -320,6 +349,48 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
           initialScanImageBase64: widget.initialScanImageBase64,
         ),
       ),
+    );
+  }
+}
+
+class MusicTrack {
+  final String id;
+  final String title;
+  final String artist;
+  final List<String> emotions;
+  final String? musicUrl;
+  final String? coverUrl;
+  final String? createdAt;
+  final double? recommendationScore;
+
+  const MusicTrack({
+    required this.id,
+    required this.title,
+    required this.artist,
+    required this.emotions,
+    this.musicUrl,
+    this.coverUrl,
+    this.createdAt,
+    this.recommendationScore,
+  });
+
+  factory MusicTrack.fromJson(Map<String, dynamic> json) {
+    final rawEmotions = json['emotions'];
+    final emotions = rawEmotions is List
+        ? rawEmotions.map((e) => e.toString()).toList()
+        : <String>[];
+
+    return MusicTrack(
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] ?? 'Unknown Title').toString(),
+      artist: (json['artist'] ?? 'Unknown Artist').toString(),
+      emotions: emotions,
+      musicUrl: (json['audio_url'] ?? json['music_url'])?.toString(),
+      coverUrl: json['cover_url']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      recommendationScore: json['recommendation_score'] is num
+          ? (json['recommendation_score'] as num).toDouble()
+          : null,
     );
   }
 }

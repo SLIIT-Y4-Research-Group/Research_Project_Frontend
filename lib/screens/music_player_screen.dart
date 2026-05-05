@@ -174,7 +174,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     if (token == null || token.isEmpty) return;
 
     final response = await http.post(
-      Uri.parse('${ApiConfig.BASE_URL}/music/session/${_activeSessionId!}/complete'),
+      Uri.parse('${ApiConfig.baseUrl}/music/session/${_activeSessionId!}/complete'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
