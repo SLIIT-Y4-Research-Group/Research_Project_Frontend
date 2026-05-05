@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:my_first_app/screens/drawing_board_page.dart';
+import '../widgets/child_bottom_nav_bar.dart';
 
 class ArtTherapyStep3Screen extends StatefulWidget {
   const ArtTherapyStep3Screen({super.key});
@@ -83,6 +84,7 @@ class _ArtTherapyStep3ScreenState extends State<ArtTherapyStep3Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text("කලා චිකිත්සාව - පියවර 03"),
         backgroundColor: const Color(0xFF4EAA57),

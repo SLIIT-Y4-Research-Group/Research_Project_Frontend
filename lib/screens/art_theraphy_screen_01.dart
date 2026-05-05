@@ -1,7 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
+
+import '../widgets/child_bottom_nav_bar.dart';
 
 class ArtTherapyStep1Screen extends StatefulWidget {
   const ArtTherapyStep1Screen({super.key});
@@ -25,7 +28,7 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
     _playInstructionAudio();
   }
 
-  void _playInstructionAudio() async {
+  Future<void> _playInstructionAudio() async {
     await _audioPlayer.play(
       AssetSource('audio/screen1.mp3'),
     );
@@ -45,8 +48,11 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
 
   Future<void> _goNext() async {
     if (_navigated || !mounted) return;
+
     _navigated = true;
     _timer?.cancel();
+
+    await _audioPlayer.stop();
 
     setState(() {
       _isLoading = true;
@@ -69,6 +75,7 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text("කලා චිකිත්සාව - පියවර 01"),
         backgroundColor: const Color(0xFF4EAA57),
@@ -139,11 +146,10 @@ class _ArtTherapyStep1ScreenState extends State<ArtTherapyStep1Screen> {
               ),
             ),
           ),
-
           if (_isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 child: const Center(
                   child: CircularProgressIndicator(
                     color: Color(0xFF4EAA57),

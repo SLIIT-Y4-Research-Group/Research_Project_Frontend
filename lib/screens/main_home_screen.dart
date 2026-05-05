@@ -1,17 +1,20 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/api_client.dart';
+import '../widgets/child_bottom_nav_bar.dart';
+
 import 'child_drawing_gallery_screen.dart';
 import 'onboarding_lottie_screen.dart';
 import 'bubble_pop_page.dart';
 import 'balloon_breath_page.dart';
-import 'mood_home.dart';
 import 'mood_intro_screen.dart';
 import 'scan_screen.dart';
 import 'student_dashboard_screen.dart';
 import 'settings_screen.dart';
-import '../services/api_client.dart';
 import 'story/home_screen.dart' as StoryHome;
 
 class MainHomeScreen extends StatefulWidget {
@@ -46,40 +49,37 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 
   Future<void> _checkAndShowFirstLoginDialog() async {
     await Future.delayed(const Duration(milliseconds: 500));
-    
-    // First check local storage for immediate feedback
+
     final prefs = await SharedPreferences.getInstance();
     final localHasSeen = prefs.getBool('has_seen_first_login_dialog') ?? false;
-    
+
     if (localHasSeen) {
       debugPrint('[FirstLogin] Already seen locally, skipping dialog');
       return;
     }
-    
+
     try {
-      // Check with backend if user has seen the prompt
       final response = await ApiClient.getChildInfo();
-      
+
       debugPrint('[FirstLogin] Backend response: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final hasSeenPrompt = data['has_seen_first_login_prompt'] ?? false;
-        
-        debugPrint('[FirstLogin] Backend has_seen_first_login_prompt: $hasSeenPrompt');
-        
-        // Show dialog only if backend says they haven't seen it
+
+        debugPrint(
+          '[FirstLogin] Backend has_seen_first_login_prompt: $hasSeenPrompt',
+        );
+
         if (!hasSeenPrompt && mounted) {
           debugPrint('[FirstLogin] Showing dialog');
           _showFirstLoginDialog();
         } else {
-          // Backend says they've seen it, update local storage
           await prefs.setBool('has_seen_first_login_dialog', true);
         }
       }
     } catch (e) {
       debugPrint('[FirstLogin] Error checking first login status: $e');
-      // Don't show dialog if API call fails
     }
   }
 
@@ -90,6 +90,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
       builder: (BuildContext dialogContext) {
         final media = MediaQuery.of(dialogContext);
         final isSmallScreen = media.size.width < 360;
+
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -104,7 +105,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Welcome animation
                     SizedBox(
                       height: isSmallScreen ? 90 : 120,
                       child: Lottie.asset(
@@ -153,7 +153,11 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'ඔයාගෙ මේ ගිණුම හදල තියෙන්නෙ ඔයාගේ දෙමාපියො හරි ඔයාගේ භාරකාරයෝ හරි, ඉතින් සුව මනස අපි කැමතියි ඔයාගේ පෞද්ගලිකත්වය ආරක්ෂා කිරීම වෙනුවෙන් ඔයා ඔයාගේ මුරපදය මාරු කරනවනම් ඒ වගේම අපේ Email Alert එක සක්‍රිය කිරීමෙන් ඔයාගේ මූඩ් එක අවුල් ගියපු වෙලාවක ඔයාගේ අවසරය ඇතිව අපිට ලේසියෙන්ම ඔයාගෙ දෙමාපියො හරි භාරකාරය හරි දැනුවත් කරන්න පුළුවන්',
+                      'ඔයාගෙ මේ ගිණුම හදල තියෙන්නෙ ඔයාගේ දෙමාපියො හරි ඔයාගේ භාරකාරයෝ හරි, '
+                      'ඉතින් සුව මනස අපි කැමතියි ඔයාගේ පෞද්ගලිකත්වය ආරක්ෂා කිරීම වෙනුවෙන් '
+                      'ඔයා ඔයාගේ මුරපදය මාරු කරනවනම් ඒ වගේම අපේ Email Alert එක සක්‍රිය කිරීමෙන් '
+                      'ඔයාගේ මූඩ් එක අවුල් ගියපු වෙලාවක ඔයාගේ අවසරය ඇතිව අපිට ලේසියෙන්ම '
+                      'ඔයාගෙ දෙමාපියො හරි භාරකාරය හරි දැනුවත් කරන්න පුළුවන්',
                       style: TextStyle(
                         fontSize: isSmallScreen ? 12 : 13,
                         color: Colors.black54,
@@ -175,22 +179,24 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                   child: ElevatedButton(
                     onPressed: () async {
                       debugPrint('[FirstLogin] Go to Settings clicked');
-                      
-                      // Mark as seen in local storage
+
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setBool('has_seen_first_login_dialog', true);
-                      
-                      // Notify backend that user has seen the prompt
+
                       try {
-                        final response = await ApiClient.markFirstLoginPromptSeen();
-                        debugPrint('[FirstLogin] Backend response: ${response.statusCode}');
+                        final response =
+                            await ApiClient.markFirstLoginPromptSeen();
+                        debugPrint(
+                          '[FirstLogin] Backend response: ${response.statusCode}',
+                        );
                       } catch (e) {
-                        debugPrint('[FirstLogin] Error marking first login seen: $e');
+                        debugPrint(
+                          '[FirstLogin] Error marking first login seen: $e',
+                        );
                       }
-                      
+
                       Navigator.of(dialogContext).pop();
-                      
-                      // Navigate to Settings
+
                       if (mounted) {
                         Navigator.push(
                           context,
@@ -223,19 +229,22 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                   child: TextButton(
                     onPressed: () async {
                       debugPrint('[FirstLogin] Skip clicked');
-                      
-                      // Mark as seen in local storage
+
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setBool('has_seen_first_login_dialog', true);
-                      
-                      // Notify backend that user has seen the prompt
+
                       try {
-                        final response = await ApiClient.markFirstLoginPromptSeen();
-                        debugPrint('[FirstLogin] Backend response: ${response.statusCode}');
+                        final response =
+                            await ApiClient.markFirstLoginPromptSeen();
+                        debugPrint(
+                          '[FirstLogin] Backend response: ${response.statusCode}',
+                        );
                       } catch (e) {
-                        debugPrint('[FirstLogin] Error marking first login seen: $e');
+                        debugPrint(
+                          '[FirstLogin] Error marking first login seen: $e',
+                        );
                       }
-                      
+
                       Navigator.of(dialogContext).pop();
                     },
                     style: TextButton.styleFrom(
@@ -305,14 +314,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     });
   }
 
-  void _showComingSoon(BuildContext context, String featureName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$featureName feature will be added soon.'),
-      ),
-    );
-  }
-
   Future<void> _handleMoodCheckNavigation() async {
     if (_isLoading) return;
 
@@ -321,36 +322,36 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
     });
 
     try {
-      // Check today's mood status before navigating
       final response = await ApiClient.getTodayMoodStatus();
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final bool todayCompleted = data['completed'] ?? false;
-        
+
         if (todayCompleted) {
-          // Already completed today
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.'),
+                content: Text(
+                  'ඔබ අද දවසේ මනෝභාව පරීක්ෂාව දැනටමත් සම්පූර්ණ කර ඇත.',
+                ),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
               ),
             );
           }
+
           setState(() {
             _isLoading = false;
           });
           return;
         }
       }
-      
-      // Not completed, proceed to mood check
+
       await Future.delayed(const Duration(milliseconds: 800));
-      
+
       if (!mounted) return;
-      
+
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -358,12 +359,12 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         ),
       );
     } catch (e) {
-      print('[HOME] Error checking mood status: $e');
-      // If check fails, allow navigation (fail-safe)
+      debugPrint('[HOME] Error checking mood status: $e');
+
       await Future.delayed(const Duration(milliseconds: 800));
-      
+
       if (!mounted) return;
-      
+
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -383,8 +384,9 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWideScreen = screenWidth > 900;
-    
+
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         backgroundColor: const Color(0xFFE8F5E9),
         elevation: 0,
@@ -407,7 +409,11 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.person_rounded, color: Color(0xFF22C55E), size: 22),
+              icon: const Icon(
+                Icons.person_rounded,
+                color: Color(0xFF22C55E),
+                size: 22,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -426,7 +432,11 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_rounded, color: Color(0xFF22C55E), size: 22),
+              icon: const Icon(
+                Icons.settings_rounded,
+                color: Color(0xFF22C55E),
+                size: 22,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -453,7 +463,6 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
         ),
         child: Stack(
           children: [
-            // Decorative background circles
             Positioned(
               top: -50,
               right: -50,
@@ -502,241 +511,217 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
                       24,
                     ),
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Welcome Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF66BB6A),
-                              Color(0xFF43A047),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF66BB6A),
+                                Color(0xFF43A047),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    const Color(0xFF22C55E).withOpacity(0.3),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF22C55E).withOpacity(0.3),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.emoji_emotions_rounded,
-                                color: Colors.white,
-                                size: 36,
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'ආයුබෝවන් $_childName',
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'ශරීරයත් පුංචි මනසත් සුවයෙන් තබාගමු.',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      height: 1.4,
-                                      color: Colors.white.withOpacity(0.95),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF22C55E),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'ඉක්මන් ක්‍රියාකාරකම්',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black87,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          final isCompact = screenWidth < 480;
-                          final cardWidth = isCompact
-                              ? (screenWidth * 0.56).clamp(180.0, 220.0)
-                              : (screenWidth * 0.35).clamp(220.0, 280.0);
-
-                          if (isWideScreen) {
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: _QuickActionCard(
-                                    title: 'Bubble Game',
-                                    animationAsset: 'assets/animations/bubble.json',
-                                    color: const Color(0xFF7ED6DF),
-                                    backgroundColor: const Color(0xFFE3F2FD),
-                                    onTap: () => _navigateTo(const BubblePopPage()),
-                                  ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _QuickActionCard(
-                                    title: 'Breathing Exercise',
-                                    animationAsset: 'assets/animations/breathing.json',
-                                    color: const Color(0xFFA29BFE),
-                                    backgroundColor: const Color(0xFFEDE7F6),
-                                    onTap: () => _navigateTo(const BalloonBreathPage()),
-                                  ),
+                                child: const Icon(
+                                  Icons.emoji_emotions_rounded,
+                                  color: Colors.white,
+                                  size: 36,
                                 ),
-                              ],
-                            );
-                          }
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ආයුබෝවන් $_childName',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'ශරීරයත් පුංචි මනසත් සුවයෙන් තබාගමු.',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        height: 1.4,
+                                        color: Colors.white.withOpacity(0.95),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        _SectionTitle(title: 'ඉක්මන් ක්‍රියාකාරකම්'),
+                        const SizedBox(height: 16),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final screenWidth =
+                                MediaQuery.of(context).size.width;
+                            final isCompact = screenWidth < 480;
+                            final cardWidth = isCompact
+                                ? (screenWidth * 0.56).clamp(180.0, 220.0)
+                                : (screenWidth * 0.35).clamp(220.0, 280.0);
 
-                          return SizedBox(
-                            height: 140,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
+                            if (isWideScreen) {
+                              return Row(
                                 children: [
-                                  SizedBox(
-                                    width: cardWidth,
+                                  Expanded(
                                     child: _QuickActionCard(
                                       title: 'Bubble Game',
-                                      animationAsset: 'assets/animations/bubble.json',
+                                      animationAsset:
+                                          'assets/animations/bubble.json',
                                       color: const Color(0xFF7ED6DF),
-                                      backgroundColor: const Color(0xFFE3F2FD),
-                                      onTap: () => _navigateTo(const BubblePopPage()),
+                                      backgroundColor:
+                                          const Color(0xFFE3F2FD),
+                                      onTap: () =>
+                                          _navigateTo(const BubblePopPage()),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  SizedBox(
-                                    width: cardWidth,
+                                  const SizedBox(width: 16),
+                                  Expanded(
                                     child: _QuickActionCard(
                                       title: 'Breathing Exercise',
-                                      animationAsset: 'assets/animations/breathing.json',
+                                      animationAsset:
+                                          'assets/animations/breathing.json',
                                       color: const Color(0xFFA29BFE),
-                                      backgroundColor: const Color(0xFFEDE7F6),
-                                      onTap: () => _navigateTo(const BalloonBreathPage()),
+                                      backgroundColor:
+                                          const Color(0xFFEDE7F6),
+                                      onTap: () =>
+                                          _navigateTo(const BalloonBreathPage()),
                                     ),
                                   ),
                                 ],
+                              );
+                            }
+
+                            return SizedBox(
+                              height: 140,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _QuickActionCard(
+                                        title: 'Bubble Game',
+                                        animationAsset:
+                                            'assets/animations/bubble.json',
+                                        color: const Color(0xFF7ED6DF),
+                                        backgroundColor:
+                                            const Color(0xFFE3F2FD),
+                                        onTap: () =>
+                                            _navigateTo(const BubblePopPage()),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    SizedBox(
+                                      width: cardWidth,
+                                      child: _QuickActionCard(
+                                        title: 'Breathing Exercise',
+                                        animationAsset:
+                                            'assets/animations/breathing.json',
+                                        color: const Color(0xFFA29BFE),
+                                        backgroundColor:
+                                            const Color(0xFFEDE7F6),
+                                        onTap: () => _navigateTo(
+                                          const BalloonBreathPage(),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 36),
-                      Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF22C55E),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'ප්‍රධාන විශේෂාංග',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black87,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _MainFunctionCard(
-                        title: 'කතා මිතුරා',
-                        subtitle: 'Emotion triggered storytelling',
-                        animationAsset: 'assets/animations/story.json',
-                        color: const Color(0xFFF6B54C),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const StoryHome.HomeScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _MainFunctionCard(
-                        title: 'සිතුවම් පුවරුව',
-                        subtitle: "Emotion analysis from children's drawings",
-                        animationAsset: 'assets/animations/drawing.json',
-                        color: const Color(0xFFB86AD9),
-                        onTap: () => _navigateTo(const OnboardingLottieScreen()),
-                      ),
-                      const SizedBox(height: 12),
-_MainFunctionCard(
-  title: 'මගේ චිත්‍ර ගැලරිය',
-  subtitle: 'ඔබ යවා ඇති චිත්‍ර බලන්න',
-  animationAsset: 'assets/animations/gallery.json',
-  color: const Color(0xFF2563EB),
-  onTap: () => _navigateTo(const ChildDrawingGalleryScreen()),
-),
-                      const SizedBox(height: 12),
-                      _MainFunctionCard(
-                        title: 'හඬ දිනපොත',
-                        subtitle: 'Voice based emotion prediction',
-                        animationAsset: 'assets/animations/voice.json',
-                        color: const Color(0xFF50C2C9),
-                        onTap: _handleMoodCheckNavigation,
-                      ),
-                      const SizedBox(height: 12),
-                      _MainFunctionCard(
-                        title: 'සතුටු ගීත පෙට්ටිය',
-                        subtitle: 'Emotion based music recommender',
-                        animationAsset: 'assets/animations/face.json',
-                        color: const Color(0xFFFF8FAB),
-                        onTap: () => _navigateTo(const ScanScreen()),
-                      ),
-                    ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 36),
+                        _SectionTitle(title: 'ප්‍රධාන විශේෂාංග'),
+                        const SizedBox(height: 16),
+                        _MainFunctionCard(
+                          title: 'කතා මිතුරා',
+                          subtitle: 'Emotion triggered storytelling',
+                          animationAsset: 'assets/animations/story.json',
+                          color: const Color(0xFFF6B54C),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const StoryHome.HomeScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _MainFunctionCard(
+                          title: 'සිතුවම් පුවරුව',
+                          subtitle:
+                              "Emotion analysis from children's drawings",
+                          animationAsset: 'assets/animations/drawing.json',
+                          color: const Color(0xFFB86AD9),
+                          onTap: () =>
+                              _navigateTo(const OnboardingLottieScreen()),
+                        ),
+                        const SizedBox(height: 12),
+                        _MainFunctionCard(
+                          title: 'මගේ චිත්‍ර ගැලරිය',
+                          subtitle: 'ඔබ යවා ඇති චිත්‍ර බලන්න',
+                          animationAsset: 'assets/lottie/gallery.json',
+                          color: const Color(0xFF2563EB),
+                          onTap: () =>
+                              _navigateTo(const ChildDrawingGalleryScreen()),
+                        ),
+                        const SizedBox(height: 12),
+                        _MainFunctionCard(
+                          title: 'හඬ දිනපොත',
+                          subtitle: 'Voice based emotion prediction',
+                          animationAsset: 'assets/animations/voice.json',
+                          color: const Color(0xFF50C2C9),
+                          onTap: _handleMoodCheckNavigation,
+                        ),
+                        const SizedBox(height: 12),
+                        _MainFunctionCard(
+                          title: 'සතුටු ගීත පෙට්ටිය',
+                          subtitle: 'Emotion based music recommender',
+                          animationAsset: 'assets/animations/face.json',
+                          color: const Color(0xFFFF8FAB),
+                          onTap: () => _navigateTo(const ScanScreen()),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
             ),
             if (_isLoading)
               Positioned.fill(
@@ -752,6 +737,38 @@ _MainFunctionCard(
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 24,
+          decoration: BoxDecoration(
+            color: const Color(0xFF22C55E),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -776,6 +793,7 @@ class _QuickActionCard extends StatelessWidget {
     final isCompact = MediaQuery.of(context).size.width < 360;
     final double iconSize = isCompact ? 44 : 48;
     final double tileSize = isCompact ? 56 : 64;
+
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,

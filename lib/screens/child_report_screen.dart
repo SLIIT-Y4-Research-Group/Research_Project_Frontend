@@ -1,12 +1,16 @@
 import 'dart:convert';
-import 'dart:ui' as ui;
 import 'dart:io' as io;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../services/api_client.dart';
+import '../widgets/parent_bottom_nav_bar.dart';
+import 'parent_dashboard_screen.dart';
+import 'parent_drawings_screen.dart';
 
 class ChildReportScreen extends StatefulWidget {
   final String childId;
@@ -98,6 +102,45 @@ class _ChildReportScreenState extends State<ChildReportScreen> {
     }
   }
 
+  void _goToDashboard() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const ParentDashboardScreen()),
+    );
+  }
+
+  void _goToDrawings() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ParentDrawingsScreen(
+          childId: widget.childId,
+          childName: widget.childName,
+        ),
+      ),
+    );
+  }
+
+  void _onParentNavTap(int index) {
+    if (index == 0) {
+      _goToDashboard();
+      return;
+    }
+
+    if (index == 1) return;
+
+    if (index == 2) {
+      _goToDrawings();
+      return;
+    }
+
+    if (index == 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('පැතිකඩ පිටුව තවම සකසා නැත')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = widget.childName != null
@@ -106,6 +149,10 @@ class _ChildReportScreenState extends State<ChildReportScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F7F4),
+      bottomNavigationBar: ParentBottomNavBar(
+        currentIndex: 1,
+        onTap: _onParentNavTap,
+      ),
       appBar: AppBar(
         title: Text(title),
         backgroundColor: const Color(0xFF43A047),
@@ -201,7 +248,6 @@ class _ReportBody extends StatelessWidget {
           const SizedBox(height: 12),
           _StatCardsRow(summary: summary),
           const SizedBox(height: 16),
-
           if (summary['total_drawings'] != null &&
               (summary['total_drawings'] as int) > 0)
             _ChartCard(
@@ -215,7 +261,6 @@ class _ReportBody extends StatelessWidget {
                 sadPct: (summary['sad_pct'] ?? 0.0).toDouble(),
               ),
             ),
-
           if (emotionTimeline.isNotEmpty)
             _ChartCard(
               icon: Icons.show_chart,
@@ -223,7 +268,6 @@ class _ReportBody extends StatelessWidget {
               accentColor: const Color(0xFF1976D2),
               child: _EmotionTimelineChart(timeline: emotionTimeline),
             ),
-
           if (weeklyEmotion.isNotEmpty)
             _ChartCard(
               icon: Icons.bar_chart,
@@ -231,14 +275,12 @@ class _ReportBody extends StatelessWidget {
               accentColor: const Color(0xFF7B1FA2),
               child: _WeeklyEmotionBarChart(weekly: weeklyEmotion),
             ),
-
           _ChartCard(
             icon: Icons.self_improvement,
             title: 'ශිල්පකාම ක්‍රියාකාරකම් සාරාංශය',
             accentColor: const Color(0xFFF57C00),
             child: _TherapySummaryWidget(summary: therapySummary),
           ),
-
           if (therapyWeekly.isNotEmpty)
             _ChartCard(
               icon: Icons.sports_esports_outlined,
@@ -246,7 +288,6 @@ class _ReportBody extends StatelessWidget {
               accentColor: const Color(0xFFF57C00),
               child: _TherapyWeeklyBarChart(weekly: therapyWeekly),
             ),
-
           if (therapySessions.isNotEmpty)
             _ChartCard(
               icon: Icons.list_alt,
@@ -254,7 +295,6 @@ class _ReportBody extends StatelessWidget {
               accentColor: const Color(0xFF0097A7),
               child: _TherapySessionsList(sessions: therapySessions),
             ),
-
           Container(
             margin: const EdgeInsets.only(top: 4, bottom: 16),
             padding: const EdgeInsets.all(14),

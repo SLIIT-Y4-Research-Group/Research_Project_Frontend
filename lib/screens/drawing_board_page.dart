@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -10,15 +11,14 @@ import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../config/api_config.dart';
-
-import 'dart:io' as io;
-
-import 'bubble_pop_page.dart';
+import '../widgets/child_bottom_nav_bar.dart';
 import 'balloon_breath_page.dart';
+import 'bubble_pop_page.dart';
+import 'main_home_screen.dart';
 
 enum BrushType { pen, pencil, marker, eraser }
 
@@ -57,7 +57,6 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
   BrushType _brush = BrushType.pen;
 
   final GlobalKey _repaintKey = GlobalKey();
-  final TextEditingController _noteController = TextEditingController();
 
   bool _isSubmitting = false;
   Map<String, dynamic>? _lastResult;
@@ -119,6 +118,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   void _addPoint(Offset p) {
     if (_current == null) return;
+
     setState(() {
       _current!.points.add(p);
     });
@@ -132,6 +132,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   void _undo() {
     if (_strokes.isEmpty) return;
+
     setState(() {
       _redoStack.add(_strokes.removeLast());
     });
@@ -139,6 +140,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   void _redo() {
     if (_redoStack.isEmpty) return;
+
     setState(() {
       _strokes.add(_redoStack.removeLast());
     });
@@ -156,8 +158,10 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
   Future<Uint8List> _exportPngBytes() async {
     final boundary =
         _repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
     final img = await boundary.toImage(pixelRatio: 3.0);
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+
     return byteData!.buffer.asUint8List();
   }
 
@@ -175,14 +179,14 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     final file = io.File(
       '${dir.path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png',
     );
+
     await file.writeAsBytes(bytes);
 
-    await Share.shareXFiles([XFile(file.path)], text: 'මගේ චිත්‍රය');
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'මගේ චිත්‍රය',
+    );
   }
-
-  // ── Core HTTP submission ─────────────────────────────────────────────────
-  // sourceOverride = "drawing_board" → backend skips CV pipeline, goes direct to Gemini
-  // sourceOverride = ""              → backend runs full CV pipeline (scan/upload path)
 
   Future<Map<String, dynamic>> _submitBytes({
     required Uint8List bytes,
@@ -194,9 +198,8 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
     final request = http.MultipartRequest('POST', uri);
     request.fields['child_id'] = widget.childId;
-    request.fields['note'] = _noteController.text.trim();
+    request.fields['note'] = 'child_drawing_submission';
 
-    // Tell backend to skip CV pipeline for drawing board submissions
     if (sourceOverride.isNotEmpty) {
       request.fields['source_override'] = sourceOverride;
     }
@@ -211,8 +214,8 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     );
 
     http.StreamedResponse streamed;
+
     try {
-      // Drawing board goes to Gemini directly so allow a bit more time
       final timeout = sourceOverride == 'drawing_board'
           ? const Duration(seconds: 120)
           : const Duration(seconds: 90);
@@ -235,8 +238,6 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  // ── Submit from drawing canvas → skip CV, go direct to Gemini ───────────
-
   Future<void> _submitDrawingBoard() async {
     if (_strokes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -254,25 +255,27 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       setState(() => _isSubmitting = true);
 
       final bytes = await _exportPngBytes();
+
       final result = await _submitBytes(
         bytes: bytes,
         filename: 'drawing_board.png',
         contentType: 'image/png',
-        sourceOverride: 'drawing_board', // ← skips CV, direct to Gemini
+        sourceOverride: 'drawing_board',
       );
 
       if (!mounted) return;
+
       setState(() => _lastResult = result);
       _showChildSupportDialog(result);
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString());
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
-
-  // ── Submit from camera / gallery → full CV pipeline ─────────────────────
 
   Future<void> _scanOrUploadAndSubmit() async {
     if (widget.childId.isEmpty) {
@@ -316,10 +319,10 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
       final ext = picked.name.toLowerCase();
       String type = 'image/jpeg';
+
       if (ext.endsWith('.png')) type = 'image/png';
       if (ext.endsWith('.webp')) type = 'image/webp';
 
-      // No sourceOverride → backend runs full CV pipeline
       final result = await _submitBytes(
         bytes: bytes,
         filename: picked.name,
@@ -327,17 +330,18 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       );
 
       if (!mounted) return;
+
       setState(() => _lastResult = result);
       _showChildSupportDialog(result);
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString());
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
-
-  // ── Result dialog shown to child ─────────────────────────────────────────
 
   void _showChildSupportDialog(Map<String, dynamic> result) {
     final emotionRaw =
@@ -348,18 +352,40 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
         title: Text(
-          isSad ? 'අද ඔයාගේ හැඟීම්' : 'අද ඔයාගේ සතුට',
+          isSad ? 'අද ඔයාගේ හැඟීම්' : 'අද ඔයා සතුටින් වගේ',
+          textAlign: TextAlign.center,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         content: SingleChildScrollView(
-          child:
-              isSad ? _sadChildSupportContent() : _happyChildSupportContent(),
+          child: isSad ? _sadChildSupportContent() : _happyChildSupportContent(),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('හරි'),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+
+                if (!isSad) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MainHomeScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4EAA57),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('හරි'),
+            ),
           ),
         ],
       ),
@@ -433,32 +459,48 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
 
   Widget _happyChildSupportContent() {
     final messages = [
-      'අද ඔයා සතුටින් ඉන්නවා වගේ. ඒක හරි ලස්සන දෙයක්.',
-      'ඔයාට මේ සතුටු වෙලා ඉන්න හැඟීම ගැන ටිකක් කියන්න පුළුවන්ද?',
-      'සතුටු වෙලා ඉන්න එක හොඳයි. ඒත් වෙන හැඟීම් තිබුණත් ඒවාත් හරි.',
-      'ඔයාට සතුටක් දෙන දේවල් මොනවද කියලා අපි හොයමු.',
-      'අද වගේ දවස් තව වැඩි කරගන්න අපිට පුළුවන්.',
-      'ඔයාට හොඳට දැනෙන දේවල් කරගෙන යන්න හරිද?',
-      'කවදාවත් නැවත දුකක් එනවා නම්, ඒකත් කියන්න පුළුවන්.',
-      'ඔයාට දැනෙන හැඟීම් හැම එකක්ම වැදගත්.',
-      'අපි ටික ටික හොඳට ඉන්න පුරුදු හදමු, නිදාගන්න, කන්න, සෙල්ලම් කරන්න වගේ.',
-      'ඔයාට කතා කරන්න කැමති කෙනෙක් තියෙනවද? එයාලත් එක්ක share කරන්න හොඳයි.',
-      'ඔයාට අද හොඳට දැනෙන එක ගැන අපි සතුටු වෙමු.',
-      'අපි එකට මේ සතුට තියාගෙන යන්න උත්සාහ කරමු.',
-      'ඔයා ශක්තිමත් ළමයෙක්. මේ හැඟීම් හොඳින් handle කරනවා.',
-      'ඔයාට ඕන වෙලාවක කියන්න පුළුවන්. මම ඉන්නවා.',
+      'අද ඔයා සතුටින් වගේ 😊',
+      'ඒක හරි ලස්සන දෙයක්.',
+      'ඔයාට සතුටක් දෙන දේවල් කරගෙන යන්න.',
+      'ඔයාගේ හැඟීම් හොඳින් ප්‍රකාශ කළා.',
+      'ඔයා ශක්තිමත් ළමයෙක් ❤️',
     ];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: messages
-          .map(
-            (msg) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text('- $msg'),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          height: 130,
+          child: Lottie.asset(
+            'assets/lottie/man.json',
+            fit: BoxFit.contain,
+            repeat: true,
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'අද ඔයා සතුටින් වගේ 😊',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E7D32),
+          ),
+        ),
+        const SizedBox(height: 14),
+        ...messages.map(
+          (msg) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '- $msg',
+                style: const TextStyle(fontSize: 14.5, height: 1.4),
+              ),
             ),
-          )
-          .toList(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -469,17 +511,12 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
   }
 
   @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final canUndo = _strokes.isNotEmpty;
     final canRedo = _redoStack.isNotEmpty;
 
     return Scaffold(
+      bottomNavigationBar: const ChildBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text('සිතුවම් පුවරුව'),
         backgroundColor: const Color(0xFF4EAA57),
@@ -512,18 +549,9 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
           Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _noteController,
-                      decoration: const InputDecoration(
-                        labelText: 'සටහනක් ලියන්න (අත්‍යවශ්‍ය නැත)',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -554,7 +582,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         const Icon(Icons.brush),
@@ -577,15 +605,16 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     SizedBox(
-                      height: 44,
+                      height: 42,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemBuilder: (context, i) {
                           final c = _palette[i];
                           final selected = c.value == _color.value &&
                               _brush != BrushType.eraser;
+
                           return GestureDetector(
                             onTap: () => setState(() {
                               _color = c;
@@ -594,8 +623,8 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                               }
                             }),
                             child: Container(
-                              width: 36,
-                              height: 36,
+                              width: 34,
+                              height: 34,
                               decoration: BoxDecoration(
                                 color: c,
                                 shape: BoxShape.circle,
@@ -608,8 +637,10 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                               ),
                               child: c == Colors.white
                                   ? const Center(
-                                      child: Icon(Icons.circle_outlined,
-                                          size: 16),
+                                      child: Icon(
+                                        Icons.circle_outlined,
+                                        size: 16,
+                                      ),
                                     )
                                   : null,
                             ),
@@ -622,11 +653,10 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 6),
               Expanded(
                 child: Container(
                   color: Colors.grey.shade200,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   child: RepaintBoundary(
                     key: _repaintKey,
                     child: ClipRRect(
@@ -649,7 +679,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                 child: Column(
                   children: [
                     SizedBox(
@@ -664,7 +694,7 @@ class _DrawingBoardPageState extends State<DrawingBoardPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(

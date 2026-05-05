@@ -3,11 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../services/api_client.dart';
+import '../widgets/parent_bottom_nav_bar.dart';
 import 'child_report_screen.dart';
-
-// ─────────────────────────────────────────────────────────────
-// Parent Drawing List Screen
-// ─────────────────────────────────────────────────────────────
+import 'parent_dashboard_screen.dart';
 
 class ParentDrawingsScreen extends StatefulWidget {
   final String childId;
@@ -66,7 +64,7 @@ class _ParentDrawingsScreenState extends State<ParentDrawingsScreen> {
   }
 
   void _goToChildReport() {
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => ChildReportScreen(
@@ -75,6 +73,27 @@ class _ParentDrawingsScreenState extends State<ParentDrawingsScreen> {
         ),
       ),
     );
+  }
+
+  void _onParentNavTap(int index) {
+    if (index == 0) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ParentDashboardScreen()),
+      );
+      return;
+    }
+
+    if (index == 1) {
+      _goToChildReport();
+      return;
+    }
+
+    if (index == 2) return;
+
+    if (index == 3) {
+      _goToChildReport();
+    }
   }
 
   Color _emotionColor(String emotion) {
@@ -146,6 +165,10 @@ class _ParentDrawingsScreenState extends State<ParentDrawingsScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: ParentBottomNavBar(
+        currentIndex: 2,
+        onTap: _onParentNavTap,
+      ),
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF43A047)),
@@ -203,10 +226,6 @@ class _ParentDrawingsScreenState extends State<ParentDrawingsScreen> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// Card Widget
-// ─────────────────────────────────────────────────────────────
 
 class _DrawingCard extends StatelessWidget {
   final String imageUrl;
@@ -359,10 +378,6 @@ class _DrawingCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Detail Screen
-// ─────────────────────────────────────────────────────────────
-
 class ParentDrawingDetailScreen extends StatelessWidget {
   final Map<String, dynamic> drawing;
 
@@ -442,8 +457,9 @@ class ParentDrawingDetailScreen extends StatelessWidget {
 
     final objects = drawing['objects'] is List ? drawing['objects'] as List : [];
 
-    final guidance =
-        drawing['parent_guidance'] is Map ? drawing['parent_guidance'] as Map : {};
+    final guidance = drawing['parent_guidance'] is Map
+        ? drawing['parent_guidance'] as Map
+        : {};
     final keyObservations = guidance['key_observations'] is List
         ? guidance['key_observations'] as List
         : [];
@@ -696,7 +712,8 @@ class ParentDrawingDetailScreen extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 obs.toString(),
-                                style: const TextStyle(height: 1.5, fontSize: 14),
+                                style:
+                                    const TextStyle(height: 1.5, fontSize: 14),
                               ),
                             ),
                           ],
@@ -819,10 +836,6 @@ class ParentDrawingDetailScreen extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Color Analysis Card
-// ─────────────────────────────────────────────────────────────
-
 class _ColorAnalysisCard extends StatelessWidget {
   final Map<String, dynamic> drawing;
   const _ColorAnalysisCard({required this.drawing});
@@ -849,7 +862,9 @@ class _ColorAnalysisCard extends StatelessWidget {
     }
     if (n.contains('purple') || n.contains('දම්')) return Colors.purple.shade400;
     if (n.contains('pink') || n.contains('රෝස')) return Colors.pink.shade300;
-    if (n.contains('brown') || n.contains('දුඹුරු')) return Colors.brown.shade400;
+    if (n.contains('brown') || n.contains('දුඹුරු')) {
+      return Colors.brown.shade400;
+    }
     if (n.contains('black') || n.contains('කළු')) return Colors.black87;
     if (n.contains('white') || n.contains('සුදු')) return Colors.grey.shade300;
     if (n.contains('grey') || n.contains('gray') || n.contains('අළු')) {
@@ -954,7 +969,8 @@ class _ColorAnalysisCard extends StatelessWidget {
                   children: [
                     const Text(
                       '• ',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Expanded(
                       child: Text(
@@ -972,10 +988,6 @@ class _ColorAnalysisCard extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// Spatial Analysis Card
-// ─────────────────────────────────────────────────────────────
 
 class _SpatialAnalysisCard extends StatelessWidget {
   final Map<String, dynamic> drawing;
@@ -1057,7 +1069,8 @@ class _SpatialAnalysisCard extends StatelessWidget {
                   children: [
                     const Text(
                       '• ',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Expanded(
                       child: Text(
@@ -1085,7 +1098,8 @@ class _SpatialAnalysisCard extends StatelessWidget {
                   children: [
                     const Text(
                       '• ',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Expanded(
                       child: Text(
@@ -1103,10 +1117,6 @@ class _SpatialAnalysisCard extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// Stroke Analysis Card
-// ─────────────────────────────────────────────────────────────
 
 class _StrokeAnalysisCard extends StatelessWidget {
   final Map<String, dynamic> drawing;
@@ -1220,10 +1230,6 @@ class _StrokeAnalysisCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Shared helper row widget
-// ─────────────────────────────────────────────────────────────
-
 class _AnalysisRow extends StatelessWidget {
   final String icon;
   final String label;
@@ -1266,10 +1272,6 @@ class _AnalysisRow extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// Reusable Widgets
-// ─────────────────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
   final IconData icon;
