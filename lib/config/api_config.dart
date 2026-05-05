@@ -24,4 +24,9 @@ class ApiConfig {
       '$BASE_URL/mood/validate_answer';
   static const String PREDICT_QUESTION_ENDPOINT =
       '$BASE_URL/mood/predict_question';
+
+  // ================= MUSIC SESSION API =================
+  static const String musicTracks = '$BASE_URL/music/tracks';
+  static const String musicRecommendations = '$BASE_URL/music/recommendations';
+  static const String musicSessionStart = '$BASE_URL/music/session/start';
 }

@@ -6,11 +6,7 @@ plugins {
 }
 
 android {
-<<<<<<< HEAD
-    namespace = "com.example.storygen_flutter"
-=======
     namespace = "com.example.my_first_app"
->>>>>>> 212142d8663e5f0001ce1ef82a5c3bca963c6f82
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,11 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-<<<<<<< HEAD
-        applicationId = "com.example.storygen_flutter"
-=======
         applicationId = "com.example.my_first_app"
->>>>>>> 212142d8663e5f0001ce1ef82a5c3bca963c6f82
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

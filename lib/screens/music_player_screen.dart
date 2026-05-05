@@ -1,21 +1,27 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:just_audio/just_audio.dart';
 import '../config/api_config.dart';
+import '../services/auth_service.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   final Map<String, dynamic> song;
   final List<Map<String, dynamic>> playlist;
   final String emotion;
+  final String? initialScanImageBase64;
 
   const MusicPlayerScreen({
     super.key,
     required this.song,
     required this.playlist,
     required this.emotion,
+    this.initialScanImageBase64,
   });
 
   @override
@@ -24,8 +30,15 @@ class MusicPlayerScreen extends StatefulWidget {
 
 class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   final AudioPlayer _player = AudioPlayer();
+  final ImagePicker _imagePicker = ImagePicker();
+  StreamSubscription<Duration?>? _durationSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<PlayerState>? _playerStateSub;
   bool _isPlaying = false;
   bool _isLoading = false;
+  bool _sessionInitialized = false;
+  bool _completionHandled = false;
+  String? _activeSessionId;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   late Map<String, dynamic> _currentSong;
@@ -42,20 +55,27 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     _currentSong = widget.song;
     _currentIndex = widget.playlist.indexOf(widget.song);
 
-    _player.durationStream.listen((d) {
-      if (d != null) {
-        setState(() => _duration = d);
-      }
+    _durationSub = _player.durationStream.listen((d) {
+      if (!mounted || d == null) return;
+      setState(() => _duration = d);
     });
-    _player.positionStream.listen((p) {
+    _positionSub = _player.positionStream.listen((p) {
+      if (!mounted) return;
       setState(() => _position = p);
+      _maybeHandleCompletionByPosition();
     });
-    _player.playerStateStream.listen((state) {
+    _playerStateSub = _player.playerStateStream.listen((state) {
+      if (!mounted) return;
       setState(() {
         _isPlaying = state.playing;
         _isLoading = state.processingState == ProcessingState.loading ||
             state.processingState == ProcessingState.buffering;
       });
+      if (state.processingState == ProcessingState.completed &&
+          !_completionHandled) {
+        _completionHandled = true;
+        _handleSongCompletionFeedback();
+      }
     });
 
     _loadSong(_currentSong);
@@ -82,6 +102,11 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     try {
       setState(() => _isLoading = true);
       await _player.setUrl(url);
+      if (!_sessionInitialized) {
+        _sessionInitialized = true;
+        _completionHandled = false;
+        await _startListeningSession();
+      }
       await _player.play();
     } catch (_) {
       if (mounted) {
@@ -109,6 +134,156 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     };
   }
 
+  Future<void> _startListeningSession() async {
+    final songId = _currentSong['id']?.toString();
+    if (songId == null || songId.isEmpty) return;
+    final imageB64 = widget.initialScanImageBase64 ??
+        await _captureFaceAsBase64(
+          title: 'Scan Before Listening',
+          subtitle: 'Take a face scan before music starts.',
+        );
+    if (imageB64 == null) return;
+    final token = await AuthService().getToken();
+    if (token == null || token.isEmpty) return;
+
+    final response = await http.post(
+      Uri.parse(ApiConfig.musicSessionStart),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'track_id': songId, 'before_image': imageB64}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      _activeSessionId = data['session_id']?.toString();
+    }
+  }
+
+  Future<void> _handleSongCompletionFeedback() async {
+    if (_activeSessionId == null) return;
+    if (!mounted) return;
+    final rating = await _askSatisfactionRating();
+    if (rating == null) return;
+    final afterB64 = await _captureFaceAsBase64(
+      title: 'Scan After Listening',
+      subtitle: 'Take a face scan after song completion.',
+    );
+    if (afterB64 == null) return;
+    final token = await AuthService().getToken();
+    if (token == null || token.isEmpty) return;
+
+    final response = await http.post(
+      Uri.parse('${ApiConfig.BASE_URL}/music/session/${_activeSessionId!}/complete'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'after_image': afterB64,
+        'satisfaction_rating': rating,
+      }),
+    );
+
+    if (!mounted) return;
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Feedback saved. Recommendations will improve next time.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save feedback (${response.statusCode}).'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _maybeHandleCompletionByPosition() {
+    if (_completionHandled) return;
+    if (_duration == Duration.zero) return;
+    final remainingMs = _duration.inMilliseconds - _position.inMilliseconds;
+    if (remainingMs <= 350 && remainingMs >= -2000) {
+      _completionHandled = true;
+      _handleSongCompletionFeedback();
+    }
+  }
+
+  Future<int?> _askSatisfactionRating() async {
+    int selected = 5;
+    return showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Rate this song'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('How much did this song help your mood?'),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final star = index + 1;
+                      return IconButton(
+                        onPressed: () => setDialogState(() => selected = star),
+                        icon: Icon(
+                          star <= selected ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Skip'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, selected),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<String?> _captureFaceAsBase64({
+    required String title,
+    required String subtitle,
+  }) async {
+    if (!mounted) return null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$title: $subtitle')),
+    );
+    final file = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.front,
+      imageQuality: 75,
+    );
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    if (kIsWeb && bytes.isEmpty) return null;
+    return base64Encode(bytes);
+  }
+
   void _updateCurrentSong(Map<String, dynamic> song) {
     setState(() {
       _currentSong = song;
@@ -120,6 +295,9 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
   @override
   void dispose() {
+    _durationSub?.cancel();
+    _positionSub?.cancel();
+    _playerStateSub?.cancel();
     _player.dispose();
     super.dispose();
   }

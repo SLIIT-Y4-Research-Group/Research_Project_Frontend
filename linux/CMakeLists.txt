@@ -4,17 +4,10 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-<<<<<<< HEAD
-set(BINARY_NAME "storygen_flutter")
-# The unique GTK application identifier for this application. See:
-# https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.example.storygen_flutter")
-=======
 set(BINARY_NAME "my_first_app")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "com.example.my_first_app")
->>>>>>> 212142d8663e5f0001ce1ef82a5c3bca963c6f82
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
