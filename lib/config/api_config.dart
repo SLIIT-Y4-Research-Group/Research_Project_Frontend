@@ -14,6 +14,22 @@ class ApiConfig {
   // ================= LEADERBOARD API =================
   static const String leaderboardBase = '$baseUrl/leaderboard';
 
+  // ================= YOUR SINHALA MOOD API =================
+  // Sinhala Mood Classification API
+  static const String BASE_URL = 'http://127.0.0.1:8000';
+
+  static const String PREDICT_ENDPOINT = '$BASE_URL/mood/predict';
+  static const String PREDICT_OVERALL_ENDPOINT =
+      '$BASE_URL/mood/predict_overall';
+  static const String VALIDATE_ANSWER_ENDPOINT =
+      '$BASE_URL/mood/validate_answer';
+  static const String PREDICT_QUESTION_ENDPOINT =
+      '$BASE_URL/mood/predict_question';
+
+  // ================= MUSIC SESSION API =================
+  static const String musicTracks = '$BASE_URL/music/tracks';
+  static const String musicRecommendations = '$BASE_URL/music/recommendations';
+  static const String musicSessionStart = '$BASE_URL/music/session/start';
   // ================= UNIFIED BACKEND API =================
   // All mood endpoints (prediction + storage) now use the same backend
   // The ML prediction code has been merged into the main backend

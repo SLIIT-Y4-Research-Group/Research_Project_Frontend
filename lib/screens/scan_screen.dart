@@ -293,8 +293,11 @@ class _ScanScreenState extends State<ScanScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            MusicRecommendationScreen(emotion: detectedEmotion),
+                          builder: (context) =>
+                            MusicRecommendationScreen(
+                              emotion: detectedEmotion,
+                              initialScanImageBase64: base64Encode(_capturedImage!),
+                            ),
                       ),
                     );
                   },

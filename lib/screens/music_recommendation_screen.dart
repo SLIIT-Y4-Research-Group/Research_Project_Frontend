@@ -2,12 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../services/auth_service.dart';
 import 'music_player_screen.dart';
 
 class MusicRecommendationScreen extends StatefulWidget {
   final String emotion;
+  final String? initialScanImageBase64;
 
-  const MusicRecommendationScreen({super.key, required this.emotion});
+  const MusicRecommendationScreen({
+    super.key,
+    required this.emotion,
+    this.initialScanImageBase64,
+  });
 
   @override
   State<MusicRecommendationScreen> createState() =>
@@ -25,10 +31,37 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchTracks(String emotion) async {
+    final token = await AuthService().getToken();
     final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/music/tracks?emotion=${Uri.encodeComponent(emotion)}',
+      '${ApiConfig.musicRecommendations}?current_emotion=${Uri.encodeComponent(emotion)}',
     );
-    final response = await http.get(uri);
+    final response = await http.get(
+      uri,
+      headers: token == null ? {} : {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final fallbackUri = Uri.parse(
+        '${ApiConfig.musicTracks}?emotion=${Uri.encodeComponent(emotion)}',
+      );
+      final fallback = await http.get(fallbackUri);
+      if (fallback.statusCode != 200) {
+        throw Exception('Failed to load tracks');
+      }
+      final List<dynamic> data = jsonDecode(fallback.body) as List<dynamic>;
+      return data.map((item) {
+        final map = item as Map<String, dynamic>;
+        return {
+          'id': map['id'] ?? map['_id'],
+          'title': map['title'] ?? 'Unknown Title',
+          'subtitle': map['artist'] ?? 'Unknown Artist',
+          'audio_url': map['audio_url'] ?? map['music_url'],
+          'cover_url': map['cover_url'],
+          'duration': '3:00',
+          'colors': _colorsForEmotion(emotion),
+          'isFavorite': false,
+        };
+      }).toList();
+    }
     if (response.statusCode != 200) {
       throw Exception('Failed to load tracks');
     }
@@ -284,6 +317,7 @@ class _MusicRecommendationScreenState extends State<MusicRecommendationScreen> {
           song: song,
           playlist: allSongs,
           emotion: widget.emotion,
+          initialScanImageBase64: widget.initialScanImageBase64,
         ),
       ),
     );
