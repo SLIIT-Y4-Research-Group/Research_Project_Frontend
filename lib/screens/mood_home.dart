@@ -316,7 +316,7 @@ class _MoodHomeState extends State<MoodHome> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('ඔබේ භාරකරුට දැනුම්දීම යවන ලදී ✓'),
+                          content: Text('ඔබේ භාරකරුට දැනුම්දීම යවන ලදී '),
                           duration: Duration(seconds: 3),
                           backgroundColor: Color(0xFF22C55E),
                         ),
@@ -774,13 +774,13 @@ class _MoodHomeState extends State<MoodHome> {
   }
 
   Future<void> checkQuestionMood(int questionIndex) async {
-    debugPrint("🔍 checkQuestionMood called for question $questionIndex");
+    debugPrint("checkQuestionMood called for question $questionIndex");
 
     final question = questions[questionIndex];
     final questionId = questionIndex + 1;
 
     if (question.answer.trim().isEmpty) {
-      debugPrint("❌ Answer is empty");
+      debugPrint(" Answer is empty");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("කරුණාකර මුලින්ම ප්‍රශ්නයට පිළිතුරු දෙන්න"),
@@ -796,7 +796,7 @@ class _MoodHomeState extends State<MoodHome> {
     });
 
     final validation = await validateAnswer(questionId, question.answer.trim());
-    debugPrint("📋 Validation status: ${validation?.status ?? 'null'} (normalized: ${validation?.statusNormalized ?? 'null'})");
+    debugPrint(" Validation status: ${validation?.status ?? 'null'} (normalized: ${validation?.statusNormalized ?? 'null'})");
 
     if (validation == null) {
       setState(() {
@@ -1270,7 +1270,7 @@ class _MoodHomeState extends State<MoodHome> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("අද දවසේ මනෝභාවය දැනටමත් සටහන් කර ඇත."),
+                    content: Text("ඔයා අද mood check එක කරලා ඉවරයි!."),
                     duration: Duration(seconds: 3),
                     backgroundColor: Colors.orange,
                   ),

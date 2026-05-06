@@ -333,7 +333,7 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                  ' ඔයා අද දවසේ mood එක චෙක් කරලා ඉවරයි',
+                  'ඔයා අද දවසේ mood එක චෙක් කරලා ඉවරයි',
                 ),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
